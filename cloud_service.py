@@ -30,6 +30,8 @@ class CloudAccountService:
         data=self.auth.signup(email,password,name,redirect_to)
         if not data.get('session'): return {'authenticated':False,'verification_required':True,'message':'Account created. Check your email to verify your account, then log in.'}
         return self._finish(data)
+    def resend_confirmation(self,email,redirect_to=None):
+        return self.auth.resend(email,redirect_to)
     def login(self,email,password): return self._finish(self.auth.login(email,password))
     def _finish(self,data):
         user=data.get('user') or self.auth.user(data['access_token']); uid=self.ensure_local_user(user)
