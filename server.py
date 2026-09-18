@@ -69,6 +69,10 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/auth/cloud/recover':
                 if not cloud: raise ValueError('Cloud account service is not configured.')
                 cloud.auth.recover(p.get('email',''),p.get('redirect_to')); return self.json({'ok':True,'message':'If the account exists, a password-reset email has been sent.'})
+            if path=='/api/auth/cloud/resend':
+                if not cloud: raise ValueError('Cloud account service is not configured.')
+                cloud.resend_confirmation(p.get('email',''),p.get('redirect_to'))
+                return self.json({'ok':True,'message':'If the account exists and still needs confirmation, a new confirmation email has been requested.'})
             if path=='/api/auth/cloud/logout':
                 if cloud: cloud.logout(self.cloud_token())
                 return self.json({'ok':True},200,{'Set-Cookie':cookie_header('pf_cloud_session','',expired=True)})
@@ -103,7 +107,7 @@ class Handler(BaseHTTPRequestHandler):
     def serve(self,name,ctype):
         path=os.path.join(ROOT,name)
         if not os.path.exists(path):return self.json({'error':'file not found'},404)
-        data=open(path,'rb').read(); self.send_response(200); self.send_header('Content-Type',ctype); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data)
+        data=open(path,'rb').read(); self.send_response(200); self.send_header('Content-Type',ctype); self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store, no-cache, must-revalidate, max-age=0'); self.send_header('Pragma','no-cache'); self.end_headers(); self.wfile.write(data)
     def do_HEAD(self):
         u=urlparse(self.path)
         if u.path=='/': return self.serve('index.html','text/html; charset=utf-8')
