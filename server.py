@@ -32,6 +32,8 @@ class Handler(BaseHTTPRequestHandler):
         return uid
     def do_GET(self):
         u=urlparse(self.path); q=parse_qs(u.query); d=q.get('date',[date.today().isoformat()])[0]
+        if u.path in ('/','/index.html'):
+            return self.serve('index.html','text/html; charset=utf-8')
         try:
             if u.path=='/api/health': return self.json({'ok':True,'service':'ProjectFit','rule_version':'workbook_v1','app_version':'2.2'})
             if u.path=='/api/cloud/status':
