@@ -29,7 +29,7 @@ button.primary,.active{background:#15171b;color:#fff}.row{display:flex;gap:8px;f
 <div class="row">
 <button type="button" id="login">Log in</button>
 <button type="button" id="register" class="primary">Create account</button>
-<button type="button" id="recover">Forgot password?</button>
+<button type="button" id="recover">Forgot password?</button><button type="button" id="resend">Resend confirmation</button>
 </div>
 <div id="authmsg" class="muted"></div>
 </div>
@@ -86,6 +86,15 @@ function register(){
       state.user=data.user;openApp();
     })
     .catch(function(error){setMessage(error.message||"Could not create account.");});
+}
+
+function resendConfirmation(){
+  var email=$("email").value.trim();
+  if(!email){setMessage("Enter your email address first.");return;}
+  setMessage("Sending a new confirmation email...");
+  api("/api/auth/cloud/resend",{method:"POST",body:JSON.stringify({email:email,redirect_to:location.origin})})
+    .then(function(data){setMessage(data.message||"Check your email.");})
+    .catch(function(error){setMessage(error.message);});
 }
 
 function recover(){
@@ -162,6 +171,7 @@ document.addEventListener("DOMContentLoaded",function(){
   $("login").addEventListener("click",login);
   $("register").addEventListener("click",register);
   $("recover").addEventListener("click",recover);
+  $("resend").addEventListener("click",resendConfirmation);
   document.querySelectorAll("[data-page]").forEach(function(button){button.addEventListener("click",function(){showPage(button.getAttribute("data-page"));});});
   api("/api/auth/me").then(function(data){if(data.authenticated){state.user=data.user;openApp();}}).catch(function(){});
 });
