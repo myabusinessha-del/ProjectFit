@@ -59,7 +59,7 @@ class Handler(BaseHTTPRequestHandler):
             p=self.body(); path=urlparse(self.path).path
             if path=='/api/auth/cloud/register':
                 if not cloud: raise ValueError('Cloud account service is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.')
-                r=cloud.signup(p.get('email',''),p.get('password',''),p.get('display_name',''))
+                r=cloud.signup(p.get('email',''),p.get('password',''),p.get('display_name',''),p.get('redirect_to') or 'https://projectfit-live.onrender.com/')
                 headers={}
                 if r.get('session_cookie'): headers['Set-Cookie']=cookie_header('pf_cloud_session',r['session_cookie'])
                 return self.json(r,200,headers)
