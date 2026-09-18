@@ -1,4 +1,5 @@
 import json, os, urllib.request, urllib.error
+from urllib.parse import quote
 try:
     from projectfit_config import SUPABASE_URL as _URL, SUPABASE_PUBLISHABLE_KEY as _KEY
 except Exception:
@@ -20,8 +21,11 @@ class SupabaseAuth:
             try: msg=json.loads(e.read() or b'{}')
             except Exception: msg={'message':e.reason}
             raise ValueError(msg.get('msg') or msg.get('message') or msg.get('error_description') or 'Supabase request failed.')
-    def signup(self,email,password,name=''):
-        return self._req('/auth/v1/signup','POST',{'email':email.strip().lower(),'password':password,'data':{'display_name':name.strip()[:80]}})
+    def signup(self,email,password,name='',redirect_to=None):
+        path='/auth/v1/signup'
+        if redirect_to:
+            path += '?redirect_to=' + quote(redirect_to, safe='')
+        return self._req(path,'POST',{'email':email.strip().lower(),'password':password,'data':{'display_name':name.strip()[:80]}})
     def login(self,email,password):
         return self._req('/auth/v1/token?grant_type=password','POST',{'email':email.strip().lower(),'password':password})
     def user(self,access_token): return self._req('/auth/v1/user','GET',access_token=access_token)
