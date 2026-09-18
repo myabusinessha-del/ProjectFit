@@ -26,8 +26,8 @@ class CloudAccountService:
             except Exception: pass
             self.db.commit()
         return uid
-    def signup(self,email,password,name):
-        data=self.auth.signup(email,password,name)
+    def signup(self,email,password,name,redirect_to=None):
+        data=self.auth.signup(email,password,name,redirect_to)
         if not data.get('session'): return {'authenticated':False,'verification_required':True,'message':'Account created. Check your email to verify your account, then log in.'}
         return self._finish(data)
     def login(self,email,password): return self._finish(self.auth.login(email,password))
