@@ -26,6 +26,11 @@ class SupabaseAuth:
         if redirect_to:
             path += '?redirect_to=' + quote(redirect_to, safe='')
         return self._req(path,'POST',{'email':email.strip().lower(),'password':password,'data':{'display_name':name.strip()[:80]}})
+    def resend(self,email,redirect_to=None):
+        path='/auth/v1/resend'
+        if redirect_to:
+            path += '?redirect_to=' + quote(redirect_to, safe='')
+        return self._req(path,'POST',{'type':'signup','email':email.strip().lower()})
     def login(self,email,password):
         return self._req('/auth/v1/token?grant_type=password','POST',{'email':email.strip().lower(),'password':password})
     def user(self,access_token): return self._req('/auth/v1/user','GET',access_token=access_token)
