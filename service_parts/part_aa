@@ -1,0 +1,49 @@
+import json,uuid
+from datetime import date,timedelta
+from engine import *
+PROGRAMME=[
+    ("Monday","Upper Push","Barbell Bench Press",4,"6-10",60,2,120),
+]
+MEASUREMENTS=[]
+NUTRITION=[]
+ACTIVITIES=[]
+CHECKINS=[]
+WORKOUT_HISTORY=[]
+from planner import plan_for, calculate_targets
+
+START_DATE=date(2026,9,7)
+DAY_ORDER=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+
+def iso(v): return v.isoformat() if hasattr(v,'isoformat') else str(v)
+
+def clamp_pct(v):
+    n=_number(v)
+    return None if n is None else max(0,min(100,n))
+
+class ProjectFit:
+    def __init__(self,db): self.db=db
+    def migrate_demo(self, uid):
+        if uid == 'demo': return {'ok':False,'message':'Demo account cannot be migrated.'}
+        if self.db.q('SELECT COUNT(*) n FROM workout_sessions WHERE user_id=?',(uid,)).fetchone()['n'] > 0:
+            return {'ok':False,'message':'This account already contains workout data. Migration was not run.'}
+        demo='demo'
+        tables=['goals','programme','workout_sessions','measurements','nutrition_entries','activity_entries','weekly_checkins','progress_reviews']
+        self.db.q('UPDATE users SET age=(SELECT age FROM users WHERE id=?),height_cm=(SELECT height_cm FROM users WHERE id=?),sex=(SELECT sex FROM users WHERE id=?),timezone=(SELECT timezone FROM users WHERE id=?) WHERE id=?',(demo,demo,demo,demo,uid))
+        for t in tables:
+            cols=[x['name'] for x in self.db.q(f'PRAGMA table_info({t})').fetchall() if x['name']!='id' or t not in ['goals']]
+            if t=='goals':
+                r=self.db.q('SELECT objective,target_weight,target_body_fat,training_frequency,calorie_target,protein_target FROM goals WHERE user_id=?',(demo,)).fetchone()
+                if r:self.db.q('UPDATE goals SET objective=?,target_weight=?,target_body_fat=?,training_frequency=?,calorie_target=?,protein_target=? WHERE user_id=?',tuple(r)+ (uid,))
+            elif t=='programme':
+                rows=self.db.q('SELECT week,day,session,exercise,sets,rep_range,start_weight,rir,rest_seconds FROM programme WHERE user_id=?',(demo,)).fetchall()
+                for r in rows:self.db.q('INSERT INTO programme(user_id,week,day,session,exercise,sets,rep_range,start_weight,rir,rest_seconds) VALUES(?,?,?,?,?,?,?,?,?,?)',(uid,*tuple(r)))
+            elif t=='workout_sessions':
+                rows=self.db.q('SELECT id,session_date,week,session_name,status,notes FROM workout_sessions WHERE user_id=?',(demo,)).fetchall()
+                for r in rows:self.db.q('INSERT INTO workout_sessions(id,user_id,session_date,week,session_name,status,notes) VALUES(?,?,?,?,?,?,?)',(r['id']+'_'+uid,uid,r['session_date'],r['week'],r['session_name'],r['status'],r['notes']))
+                logs=self.db.q('SELECT * FROM exercise_logs WHERE session_id IN (SELECT id FROM workout_sessions WHERE user_id=?)',(demo,)).fetchall()
+                for r in logs:
+                    oldsid=r['session_id']; new=self.db.q('SELECT id FROM workout_sessions WHERE user_id=? AND id=?',(uid,oldsid+'_'+uid)).fetchone()
+                    if new:
+                        nid=r['id']+'_'+uid
+                        self.db.q('INSERT INTO exercise_logs(id,session_id,exercise,target_sets,rep_range,recommended_kg,actual_kg,reps_json,avg_rir,form_good,completed,notes) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',(nid,new['id'],r['exercise'],r['target_sets'],r['rep_range'],r['recommended_kg'],r['actual_kg'],r['reps_json'],r['avg_rir'],r['form_good'],r['completed'],r['notes']))
+     
