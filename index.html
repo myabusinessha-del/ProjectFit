@@ -5,43 +5,50 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ProjectFit — Work on yourself.</title>
 <style>
-body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:#f5f6f8;color:#17191d}
-header{background:#15171b;color:#fff;padding:18px 24px;display:flex;justify-content:space-between}
-.wrap{max-width:1100px;margin:24px auto;padding:0 16px}.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px #0001;margin-bottom:14px}
-.form{display:grid;gap:10px}.form input{padding:12px;border:1px solid #ddd;border-radius:9px;box-sizing:border-box;width:100%}
-button{border:0;border-radius:10px;padding:11px 15px;background:#fff;box-shadow:0 1px 4px #0002;cursor:pointer}
-button.primary,.active{background:#15171b;color:#fff}.row{display:flex;gap:8px;flex-wrap:wrap}.muted{color:#6d727b}.hidden{display:none}
-.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-.big{font-size:28px;font-weight:700}.exercise{padding:12px 0;border-top:1px solid #eee}.tag{display:inline-block;background:#eef0f3;border-radius:20px;padding:5px 8px;font-size:12px;margin:3px}
-#authmsg{min-height:22px}.toast{position:fixed;right:20px;bottom:20px;background:#15171b;color:white;padding:12px 16px;border-radius:10px;display:none}
+:root{--ink:#15171b;--muted:#6d727b;--bg:#f5f6f8;--line:#e7e9ed;--card:#fff;--soft:#eef0f3}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--ink);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+.brand{font-weight:800;font-size:20px}.tagline{font-size:13px;opacity:.72}.wrap{max-width:1180px;margin:0 auto;padding:24px 18px 50px}
+.card{background:var(--card);border:1px solid #00000008;border-radius:18px;padding:20px;box-shadow:0 4px 18px #00000008;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.two{grid-template-columns:2fr 1fr}.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.nav button,button{border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#fff;color:var(--ink);font-weight:650;cursor:pointer}
+.nav button.active,button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}button.danger{color:#a21c1c}
+.big{font-size:30px;font-weight:800;letter-spacing:-.5px}.muted{color:var(--muted)}.small{font-size:13px}.eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:800;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.between{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.form{display:grid;gap:10px}.form input,.form select,.form textarea,input,select{padding:11px 12px;border:1px solid #d9dce1;border-radius:10px;width:100%;background:#fff;font:inherit}
+.hidden{display:none}.bar{height:9px;background:var(--soft);border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ink);border-radius:99px}
+.metric{padding:17px}.metric .label{color:var(--muted);font-size:13px;margin-bottom:6px}.metric .sub{font-size:12px;color:var(--muted);margin-top:5px}
+.exercise{border-top:1px solid var(--line);padding:16px 0}.exercise:first-child{border-top:0}.pill{display:inline-block;padding:5px 9px;border-radius:99px;background:var(--soft);font-size:12px;margin:3px 3px 3px 0}
+.setgrid{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;margin-top:10px}.setgrid input{padding:9px}
+.section-title{margin:0 0 5px;font-size:20px}.progress-line{height:180px;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+svg{width:100%;height:100%;display:block}.axis{font-size:10px;fill:#8a8f97}
+.auth{max-width:520px;margin:50px auto}.auth h1{margin-bottom:4px}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:20}
+.empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed #d7dbe1;border-radius:12px}
+.notice{background:#f0f2f5;border-radius:12px;padding:12px;font-size:13px;color:#4f555e}
+@media(max-width:900px){.grid,.three,.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){header{padding:15px 16px}.wrap{padding:15px 12px 35px}.grid,.three,.two{grid-template-columns:1fr}.card{padding:16px;border-radius:15px}.setgrid{grid-template-columns:1fr 1fr}.tagline{display:none}.big{font-size:26px}}
 </style>
 </head>
 <body>
-<header><strong>ProjectFit</strong><span>Work on yourself.</span></header>
+<header><div class="brand">ProjectFit</div><div class="tagline">Work on yourself.</div></header>
 <main class="wrap">
-<section id="auth" class="card">
-<h2>Welcome to ProjectFit</h2>
-<p class="muted">Your workouts, nutrition and progress in one place.</p>
+<section id="auth" class="card auth">
+<div class="eyebrow">Your fitness system</div><h1>Welcome to ProjectFit</h1>
+<p class="muted">Train with a plan. Eat with purpose. See whether you're actually progressing.</p>
 <div class="form">
 <input id="email" type="email" placeholder="Email">
 <input id="password" type="password" placeholder="Password (8+ characters)">
-<input id="name" placeholder="Name (for new accounts)">
-<div class="row">
-<button type="button" id="login">Log in</button>
-<button type="button" id="register" class="primary">Create account</button>
-<button type="button" id="recover">Forgot password?</button><button type="button" id="resend">Resend confirmation</button>
-</div>
-<div id="authmsg" class="muted"></div>
-</div>
-</section>
+<input id="name" placeholder="Name (new accounts)">
+<div class="row"><button id="login">Log in</button><button id="register" class="primary">Create account</button></div>
+<div class="row"><button id="recover">Forgot password?</button><button id="resend">Resend confirmation</button></div>
+<div id="authmsg" class="muted small"></div>
+</div></section>
+
 <section id="app" class="hidden">
-<div class="nav">
-<button type="button" data-page="home">Home</button>
-<button type="button" data-page="workout">Workout</button>
-<button type="button" data-page="nutrition">Nutrition</button>
-<button type="button" data-page="progress">Progress</button>
-<button type="button" data-page="profile">Profile</button>
-</div>
+<nav class="nav">
+<button data-page="home">Home</button><button data-page="workout">Workout</button><button data-page="nutrition">Nutrition</button><button data-page="progress">Progress</button><button data-page="profile">Profile</button>
+</nav>
 <div id="page"></div>
 </section>
 </main>
@@ -49,132 +56,61 @@ button.primary,.active{background:#15171b;color:#fff}.row{display:flex;gap:8px;f
 <script>
 "use strict";
 var state={user:null};
+function $(id){return document.getElementById(id)}
+function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function toast(t){var x=$("toast");x.textContent=t;x.style.display="block";setTimeout(function(){x.style.display="none"},2600)}
+function api(path,opt){var o=opt||{};o.headers=Object.assign({"Content-Type":"application/json"},o.headers||{});return fetch(path,o).then(function(r){return r.json().catch(function(){return {}}).then(function(d){if(!r.ok)throw Error(d.error||d.message||("Request failed: "+r.status));return d})})}
+function msg(t){$("authmsg").textContent=t||""}
+function login(){var e=$("email").value.trim(),p=$("password").value;if(!e||!p)return msg("Please enter your email and password.");msg("Logging in...");api("/api/auth/cloud/login",{method:"POST",body:JSON.stringify({email:e,password:p})}).then(function(d){state.user=d.user;open()}).catch(function(e){msg(e.message)})}
+function register(){var e=$("email").value.trim(),p=$("password").value,n=$("name").value.trim();if(!e||!p)return msg("Please enter your email and password.");if(p.length<8)return msg("Password must be at least 8 characters.");msg("Creating your account...");api("/api/auth/cloud/register",{method:"POST",body:JSON.stringify({email:e,password:p,display_name:n,redirect_to:location.origin})}).then(function(d){if(d.verification_required)return msg(d.message||"Account created. Check your email, then log in.");state.user=d.user;open()}).catch(function(e){msg(e.message)})}
+function resend(){var e=$("email").value.trim();if(!e)return msg("Enter your email address first.");msg("Sending confirmation email...");api("/api/auth/cloud/resend",{method:"POST",body:JSON.stringify({email:e,redirect_to:location.origin})}).then(function(d){msg(d.message||"Check your email.")}).catch(function(e){msg(e.message)})}
+function recover(){var e=$("email").value.trim();if(!e)return msg("Enter your email address first.");msg("Sending reset email...");api("/api/auth/cloud/recover",{method:"POST",body:JSON.stringify({email:e,redirect_to:location.origin})}).then(function(d){msg(d.message||"Check your email.")}).catch(function(e){msg(e.message)})}
+function open(){$("auth").classList.add("hidden");$("app").classList.remove("hidden");show("home")}
+function fail(e){$("page").innerHTML='<div class="card"><b>'+esc(e.message)+'</b></div>'}
+function pct(a,b){return b?Math.max(0,Math.min(100,a/b*100)):0}
+function metric(label,value,sub,bar){return '<div class="card metric"><div class="label">'+label+'</div><div class="big">'+value+'</div>'+(bar!=null?'<div class="bar"><i style="width:'+bar+'%"></i></div>':'')+'<div class="sub">'+(sub||"")+'</div></div>'}
 
-function $(id){return document.getElementById(id);}
-function setMessage(text){$("authmsg").textContent=text||"";}
-function showToast(text){var t=$("toast");t.textContent=text;t.style.display="block";setTimeout(function(){t.style.display="none";},2500);}
-function escapeText(value){return String(value==null?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function show(p){document.querySelectorAll("[data-page]").forEach(function(b){b.classList.toggle("active",b.dataset.page===p)});try{({home:home,workout:workout,nutrition:nutrition,progress:progress,profile:profile}[p])()}catch(e){fail(e)}}
 
-function api(path,options){
-  var opts=options||{};
-  opts.headers=Object.assign({"Content-Type":"application/json"},opts.headers||{});
-  return fetch(path,opts).then(function(response){
-    return response.json().catch(function(){return {};}).then(function(data){
-      if(!response.ok){throw new Error(data.error||data.message||("Request failed: "+response.status));}
-      return data;
-    });
-  });
-}
+function home(){api("/api/home").then(function(d){
+var cal=d.nutrition||{},ex=d.today_exercises||[];
+$("page").innerHTML='<div class="between"><div><div class="eyebrow">Today</div><h1 style="margin:3px 0">'+esc(d.day||"Training day")+'</h1><p class="muted">'+esc(d.session||"Recovery")+' · Week '+esc(d.week)+'</p></div><span class="pill">Rule engine active</span></div>'+
+'<div class="grid">'+metric("Calories",Math.round(cal.calories||0)+" / "+(cal.calorie_target||0),"kcal today",pct(cal.calories,cal.calorie_target))+metric("Protein",Math.round(cal.protein||0)+" / "+(cal.protein_target||0)+" g","daily target",pct(cal.protein,cal.protein_target))+metric("Weight",(d.weight||"—")+" kg","7-day average "+(d.seven_day_average||"—"))+metric("Training week","Week "+esc(d.week),"current programme")+'</div>'+
+'<div class="grid two"><div class="card"><div class="between"><div><h2 class="section-title">Today's workout</h2><span class="muted small">'+ex.length+' planned exercises</span></div><button class="primary" onclick="show(\'workout\')">Open workout</button></div>'+
+(ex.length?ex.map(function(x){return '<div class="exercise"><b>'+esc(x.exercise)+'</b><br><span class="pill">'+x.sets+' sets</span><span class="pill">'+esc(x.rep_range)+' reps</span><span class="pill">Target '+esc(x.today_target)+' kg</span></div>'}).join(""):'<div class="empty">No scheduled workout today.</div>')+'</div>'+
+'<div class="card"><h2 class="section-title">Coach snapshot</h2><div id="coachbox">Loading...</div></div></div>';
+api("/api/review").then(function(r){$("coachbox").innerHTML='<div class="eyebrow">Current state</div><div class="big" style="font-size:23px;margin:5px 0">'+esc(r.review_state)+'</div><p class="muted">'+esc(r.next_action)+'</p>'}).catch(function(){});
+}).catch(fail)}
 
-function login(){
-  var email=$("email").value.trim(), password=$("password").value;
-  if(!email||!password){setMessage("Please enter your email and password.");return;}
-  setMessage("Logging in...");
-  api("/api/auth/cloud/login",{method:"POST",body:JSON.stringify({email:email,password:password})})
-    .then(function(data){state.user=data.user;openApp();})
-    .catch(function(error){setMessage(error.message);});
-}
+function workout(){api("/api/programme").then(function(d){
+var ex=d.exercises||[];var h='<div class="between"><div><div class="eyebrow">Training</div><h1 style="margin:3px 0">'+esc(d.session)+'</h1><p class="muted">Week '+d.week+' · '+d.date+'</p></div></div><div class="card">';
+if(!ex.length)h+='<div class="empty">Recovery / optional walk today.</div>';
+ex.forEach(function(x,i){h+='<div class="exercise"><div class="between"><div><h3 style="margin:0">'+esc(x.exercise)+'</h3><span class="pill">'+x.sets+' sets · '+esc(x.rep_range)+'</span><span class="pill">Target '+esc(x.today_target)+' kg</span></div></div>'+
+'<div class="setgrid"><input id="kg'+i+'" type="number" step=".5" placeholder="Actual kg"><input id="reps'+i+'" placeholder="Reps: 10,9,8"><input id="rir'+i+'" type="number" step=".5" placeholder="Avg RIR"><select id="form'+i+'"><option value="Yes">Good form</option><option value="No">Needs work</option></select></div>'+
+'<div class="row" style="margin-top:9px"><button class="primary" onclick="saveWorkout('+i+',\''+esc(x.exercise).replace(/'/g,"\\'")+'\','+x.sets+',\''+esc(x.rep_range).replace(/'/g,"\\'")+'\','+x.today_target+')">Save exercise</button><span id="result'+i+'" class="muted small"></span></div></div>'});
+h+='</div><div class="notice">ProjectFit uses your completed reps, form and average RIR to calculate the next recommendation. You don't need to manually guess progression.</div>';$("page").innerHTML=h;
+}).catch(fail)}
+function saveWorkout(i,ex,sets,rr,target){var kg=Number($("kg"+i).value),rir=Number($("rir"+i).value),reps=($("reps"+i).value||"").split(",").map(function(v){return Number(v.trim())}).filter(function(v){return isFinite(v)});if(!kg||!reps.length)return toast("Enter actual kg and reps first.");api("/api/workouts/log",{method:"POST",body:JSON.stringify({date:new Date().toISOString().slice(0,10),session:state.session||"Workout",exercise:ex,target_sets:sets,rep_range:rr,recommended_kg:target,actual_kg:kg,reps:reps,avg_rir:rir,form_good:$("form"+i).value,completed:"Yes"})}).then(function(d){$("result"+i).textContent=d.recommendation||"Saved";toast("Exercise saved")}).catch(function(e){toast(e.message)})}
 
-function register(){
-  var email=$("email").value.trim(), password=$("password").value, name=$("name").value.trim();
-  if(!email||!password){setMessage("Please enter your email and password.");return;}
-  if(password.length<8){setMessage("Password must be at least 8 characters.");return;}
-  setMessage("Creating your account...");
-  api("/api/auth/cloud/register",{method:"POST",body:JSON.stringify({email:email,password:password,display_name:name,redirect_to:location.origin})})
-    .then(function(data){
-      if(data.verification_required){setMessage(data.message||"Account created. Check your email, then log in.");return;}
-      state.user=data.user;openApp();
-    })
-    .catch(function(error){setMessage(error.message||"Could not create account.");});
-}
+function nutrition(){api("/api/nutrition").then(function(d){
+var c=d.calorie_target||0,p=d.protein_target||0;var h='<div class="between"><div><div class="eyebrow">Nutrition</div><h1 style="margin:3px 0">Today</h1><p class="muted">Food-first tracking against your targets.</p></div></div><div class="grid">'+metric("Calories",Math.round(d.calories)+" / "+c,"remaining "+Math.round(d.remaining_calories||0)+" kcal",pct(d.calories,c))+metric("Protein",Math.round(d.protein)+" / "+p+" g","remaining "+Math.round(d.remaining_protein||0)+" g",pct(d.protein,p))+metric("Carbs",Math.round(d.carbs||0)+" g","today")+metric("Fat",Math.round(d.fat||0)+" g","today")+'</div>'+
+'<div class="card"><h2 class="section-title">Add food</h2><div class="row"><input id="food" placeholder="Food / meal item"><input id="meal" placeholder="Meal (e.g. Lunch)"></div><div class="row" style="margin-top:8px"><input id="cal" type="number" placeholder="Calories"><input id="pro" type="number" placeholder="Protein g"><input id="carb" type="number" placeholder="Carbs g"><input id="fat" type="number" placeholder="Fat g"></div><button class="primary" style="margin-top:9px" onclick="addFood()">Add food</button></div>'+
+'<div class="card"><div class="between"><h2 class="section-title">Today's food</h2><span class="muted small">'+(d.entries||[]).length+' entries</span></div>'+(d.entries&&d.entries.length?d.entries.map(function(x){return '<div class="exercise"><div class="between"><b>'+esc(x.food)+'</b><span>'+x.calories+' kcal</span></div><span class="muted small">'+esc(x.meal)+' · '+x.protein+' g protein · '+(x.carbs||0)+' g carbs · '+(x.fat||0)+' g fat</span></div>'}).join(""):'<div class="empty">No food logged yet today.</div>')+'</div>';$("page").innerHTML=h
+}).catch(fail)}
+function addFood(){var body={date:new Date().toISOString().slice(0,10),food:$("food").value.trim(),meal:$("meal").value.trim(),calories:Number($("cal").value),protein:Number($("pro").value),carbs:Number($("carb").value),fat:Number($("fat").value),fibre:0};if(!body.food||!body.calories)return toast("Add a food name and calories.");api("/api/nutrition",{method:"POST",body:JSON.stringify(body)}).then(function(){toast("Food added");nutrition()}).catch(function(e){toast(e.message)})}
 
-function resendConfirmation(){
-  var email=$("email").value.trim();
-  if(!email){setMessage("Enter your email address first.");return;}
-  setMessage("Sending a new confirmation email...");
-  api("/api/auth/cloud/resend",{method:"POST",body:JSON.stringify({email:email,redirect_to:location.origin})})
-    .then(function(data){setMessage(data.message||"Check your email.");})
-    .catch(function(error){setMessage(error.message);});
-}
+function spark(points){if(!points.length)return '<div class="empty">Not enough data for a chart yet.</div>';var w=760,h=180,p=25,vals=points.map(function(x){return Number(x)||0}),min=Math.min.apply(null,vals),max=Math.max.apply(null,vals);if(min===max){min-=1;max+=1}var pts=vals.map(function(v,i){return (p+i*(w-2*p)/Math.max(1,vals.length-1))+','+(h-p-(v-min)*(h-2*p)/(max-min))}).join(" ");return '<div class="progress-line"><svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><polyline fill="none" stroke="#15171b" stroke-width="3" points="'+pts+'"></polyline></svg></div>'}
+function progress(){Promise.all([api("/api/progress"),api("/api/review")]).then(function(a){var d=a[0],r=a[1],m=d.measurements||[],weights=m.map(function(x){return x.weight}).filter(Boolean),latest=weights.length?weights[weights.length-1]:"—";$("page").innerHTML='<div><div class="eyebrow">Progress</div><h1 style="margin:3px 0">Are you moving forward?</h1><p class="muted">ProjectFit looks at multiple signals instead of one number.</p></div><div class="grid">'+metric("Latest weight",latest+" kg","most recent measurement")+metric("Coach review",esc(r.review_state),"next action: "+esc(r.next_action))+metric("Measurements",m.length,"logged weigh-ins")+metric("Strength signals",(d.strength||[]).length,"tracked strength entries")+'</div>'+
+'<div class="card"><div class="between"><div><h2 class="section-title">Weight trend</h2><span class="muted small">Recorded measurements</span></div><button onclick="addMeasurement()">Log weight</button></div>'+spark(weights)+'</div>'+
+'<div class="card"><h2 class="section-title">Recent measurements</h2>'+(m.length?m.slice(-10).reverse().map(function(x){return '<div class="exercise"><div class="between"><b>'+esc(x.measurement_date)+'</b><span>'+esc(x.weight)+' kg'+(x.body_fat?' · '+esc(x.body_fat)+'% BF':'')+'</span></div></div>'}).join(""):'<div class="empty">No measurements logged yet.</div>')+'</div>'}).catch(fail)}
+function addMeasurement(){var w=prompt("Weight in kg:");if(!w)return;var bf=prompt("Body fat % (optional):");api("/api/measurements",{method:"POST",body:JSON.stringify({measurement_date:new Date().toISOString().slice(0,10),weight:Number(w),body_fat:bf?Number(bf):null})}).then(function(){toast("Measurement saved");progress()}).catch(function(e){toast(e.message)})}
 
-function recover(){
-  var email=$("email").value.trim();
-  if(!email){setMessage("Enter your email address first.");return;}
-  setMessage("Sending reset email...");
-  api("/api/auth/cloud/recover",{method:"POST",body:JSON.stringify({email:email,redirect_to:location.origin})})
-    .then(function(data){setMessage(data.message||"Check your email.");})
-    .catch(function(error){setMessage(error.message);});
-}
-
-function openApp(){$("auth").classList.add("hidden");$("app").classList.remove("hidden");showPage("home");}
-
-function showPage(name){
-  document.querySelectorAll("[data-page]").forEach(function(button){button.classList.toggle("active",button.getAttribute("data-page")===name);});
-  if(name==="home")loadHome();
-  if(name==="workout")loadWorkout();
-  if(name==="nutrition")loadNutrition();
-  if(name==="progress")loadProgress();
-  if(name==="profile")loadProfile();
-}
-
-function fail(error){$("page").innerHTML="<div class='card'><b>"+escapeText(error.message)+"</b></div>";}
-
-function loadHome(){
-  api("/api/home").then(function(d){
-    $("page").innerHTML="<div class='grid'>"+
-      "<div class='card'><div class='muted'>Week</div><div class='big'>"+d.week+"</div><div>"+escapeText(d.day)+" · "+escapeText(d.session)+"</div></div>"+
-      "<div class='card'><div class='muted'>Weight</div><div class='big'>"+(d.weight||"—")+" kg</div><div class='muted'>7-day average "+(d.seven_day_average||"—")+"</div></div>"+
-      "<div class='card'><div class='muted'>Calories</div><div class='big'>"+Math.round(d.nutrition.calories)+" / "+d.nutrition.calorie_target+"</div></div>"+
-      "<div class='card'><div class='muted'>Protein</div><div class='big'>"+Math.round(d.nutrition.protein)+" / "+d.nutrition.protein_target+" g</div></div></div>"+
-      "<div class='card'><h2>Today's plan</h2><p class='muted'>Open Workout to log your sets.</p></div>";
-  }).catch(fail);
-}
-
-function loadWorkout(){
-  api("/api/programme").then(function(d){
-    var html="<div class='card'><h2>"+escapeText(d.session)+"</h2><p class='muted'>Week "+d.week+" · "+d.date+"</p>";
-    (d.exercises||[]).forEach(function(x,i){
-      html+="<div class='exercise'><b>"+escapeText(x.exercise)+"</b><br><span class='tag'>"+x.sets+" sets · "+escapeText(x.rep_range)+"</span><span class='tag'>Target "+x.today_target+" kg</span></div>";
-    });
-    html+="</div>";
-    $("page").innerHTML=html;
-  }).catch(fail);
-}
-
-function loadNutrition(){
-  api("/api/nutrition").then(function(d){
-    $("page").innerHTML="<div class='grid'><div class='card'><div class='muted'>Calories</div><div class='big'>"+Math.round(d.calories)+" / "+d.calorie_target+"</div></div>"+
-      "<div class='card'><div class='muted'>Protein</div><div class='big'>"+Math.round(d.protein)+" / "+d.protein_target+" g</div></div>"+
-      "<div class='card'><div class='muted'>Remaining</div><div class='big'>"+Math.round(d.remaining_calories)+" kcal</div></div></div>"+
-      "<div class='card'><h2>Today's entries</h2>"+(d.entries||[]).map(function(x){return "<div class='exercise'><b>"+escapeText(x.food)+"</b> · "+escapeText(x.meal)+"<br><span class='muted'>"+x.calories+" kcal · "+x.protein+" g protein</span></div>";}).join("")+"</div>";
-  }).catch(fail);
-}
-
-function loadProgress(){
-  Promise.all([api("/api/progress"),api("/api/review")]).then(function(all){
-    var d=all[0],r=all[1],m=d.measurements||[];
-    $("page").innerHTML="<div class='grid'><div class='card'><div class='muted'>Latest weight</div><div class='big'>"+(m.length?m[m.length-1].weight:"—")+" kg</div></div>"+
-      "<div class='card'><div class='muted'>Coach review</div><div class='big'>"+escapeText(r.review_state)+"</div><div>"+escapeText(r.next_action)+"</div></div></div>";
-  }).catch(fail);
-}
-
-function loadProfile(){
-  api("/api/profile").then(function(d){
-    $("page").innerHTML="<div class='card'><h2>Profile</h2><p><b>"+escapeText(d.user.display_name)+"</b><br><span class='muted'>"+escapeText(d.user.email||"")+"</span></p>"+
-      "<button type='button' id='sync'>Sync now</button> <button type='button' id='logout'>Log out</button></div>";
-    $("sync").addEventListener("click",function(){api("/api/cloud/sync",{method:"POST",body:"{}"}).then(function(x){showToast("Synced "+x.downloaded+" records.");}).catch(function(e){showToast(e.message);});});
-    $("logout").addEventListener("click",function(){api("/api/auth/cloud/logout",{method:"POST",body:"{}"}).then(function(){location.reload();});});
-  }).catch(fail);
-}
-
-document.addEventListener("DOMContentLoaded",function(){
-  $("login").addEventListener("click",login);
-  $("register").addEventListener("click",register);
-  $("recover").addEventListener("click",recover);
-  $("resend").addEventListener("click",resendConfirmation);
-  document.querySelectorAll("[data-page]").forEach(function(button){button.addEventListener("click",function(){showPage(button.getAttribute("data-page"));});});
-  api("/api/auth/me").then(function(data){if(data.authenticated){state.user=data.user;openApp();}}).catch(function(){});
-});
+function profile(){api("/api/profile").then(function(d){var u=d.user||{},g=d.goal||{};$("page").innerHTML='<div><div class="eyebrow">Account</div><h1 style="margin:3px 0">Profile & settings</h1><p class="muted">Your account, targets and cloud controls.</p></div><div class="grid two"><div class="card"><h2 class="section-title">Your targets</h2><div class="form"><label class="small muted">Display name<input id="pname" value="'+esc(u.display_name||"")+'"></label><label class="small muted">Age<input id="pagev" type="number" value="'+esc(u.age||"")+'"></label><label class="small muted">Height (cm)<input id="pheight" type="number" value="'+esc(u.height_cm||"")+'"></label><label class="small muted">Calories<input id="pcal" type="number" value="'+esc(g.calorie_target||"")+'"></label><label class="small muted">Protein (g)<input id="ppro" type="number" value="'+esc(g.protein_target||"")+'"></label><button class="primary" onclick="saveProfile()">Save changes</button></div></div><div class="card"><h2 class="section-title">Cloud account</h2><p><b>'+esc(u.email||"")+'</b></p><p class="muted small">Your durable ProjectFit data is stored in the cloud. This device keeps a local cache for the app.</p><div class="row"><button onclick="syncNow()">Sync now</button><button onclick="exportData()">Export data</button></div><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><button class="danger" onclick="logout()">Log out</button></div></div>'}).catch(fail)}
+function saveProfile(){api("/api/profile",{method:"POST",body:JSON.stringify({display_name:$("pname").value,age:Number($("pagev").value),height_cm:Number($("pheight").value),calorie_target:Number($("pcal").value),protein_target:Number($("ppro").value)})}).then(function(){toast("Profile saved")}).catch(function(e){toast(e.message)})}
+function syncNow(){api("/api/cloud/sync",{method:"POST",body:"{}"}).then(function(d){toast("Synced "+(d.downloaded||0)+" records")}).catch(function(e){toast(e.message)})}
+function exportData(){fetch("/api/account/export").then(function(r){return r.blob().then(function(b){var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="projectfit-data-export.json";a.click();URL.revokeObjectURL(a.href)})}).catch(function(e){toast(e.message)})}
+function logout(){api("/api/auth/cloud/logout",{method:"POST",body:"{}"}).finally(function(){location.reload()})}
+document.addEventListener("DOMContentLoaded",function(){$("login").addEventListener("click",login);$("register").addEventListener("click",register);$("recover").addEventListener("click",recover);$("resend").addEventListener("click",resend);document.querySelectorAll("[data-page]").forEach(function(b){b.addEventListener("click",function(){show(b.dataset.page)})});api("/api/auth/me").then(function(d){if(d.authenticated){state.user=d.user;open()}}).catch(function(){})});
 </script>
 </body>
 </html>
