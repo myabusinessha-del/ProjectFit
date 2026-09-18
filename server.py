@@ -33,7 +33,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u=urlparse(self.path); q=parse_qs(u.query); d=q.get('date',[date.today().isoformat()])[0]
         try:
-            if u.path=='/api/health': return self.json({'ok':True,'service':'ProjectFit','rule_version':'workbook_v1','app_version':'1.9'})
+            if u.path=='/api/health': return self.json({'ok':True,'service':'ProjectFit','rule_version':'workbook_v1','app_version':'2.2'})
             if u.path=='/api/cloud/status':
                 return self.json({'enabled':bool(cloud),'provider':'Supabase','project_url':os.getenv('SUPABASE_URL','')})
             if u.path=='/api/auth/me':
@@ -59,7 +59,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not cloud: raise ValueError('Cloud account service is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.')
                 r=cloud.signup(p.get('email',''),p.get('password',''),p.get('display_name',''))
                 headers={}
-                if r.get('session_cookie'): headers['Set-Cookie']=f'pf_cloud_session={r["session_cookie"]}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000'
+                if r.get('session_cookie'): headers['Set-Cookie']=cookie_header('pf_cloud_session',r['session_cookie'])
                 return self.json(r,200,headers)
             if path=='/api/auth/cloud/login':
                 if not cloud: raise ValueError('Cloud account service is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.')
