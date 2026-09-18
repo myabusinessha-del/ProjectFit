@@ -2,6 +2,7 @@ import hashlib,secrets
 from datetime import datetime,timezone,timedelta
 from supabase_auth import SupabaseAuth
 from cloud_sync import CloudSync,table_rows,restore_rows
+
 class CloudAccountService:
     def __init__(self,db,app): self.db=db; self.app=app; self.auth=SupabaseAuth(); self.cloud=CloudSync()
     def _now(self): return datetime.now(timezone.utc).isoformat()
@@ -15,7 +16,15 @@ class CloudAccountService:
             name=(user.get('user_metadata') or {}).get('display_name') or (user.get('email','').split('@')[0] or 'ProjectFit User')
             self.db.q('INSERT INTO users VALUES (?,?,?,?,?,?,?)',(uid,name[:80],None,None,None,'Africa/Johannesburg',self._now()))
             self.db.q('INSERT INTO goals(user_id,objective,target_weight,target_body_fat,training_frequency,calorie_target,protein_target) VALUES(?,?,?,?,?,?,?)',(uid,None,None,None,None,2400,180))
-            self.db.q('INSERT INTO privacy_settings VALUES(?,?,?,?,?)',(uid,0,0,0,self._now())); self.db.commit()
+            self.db.q('INSERT INTO privacy_settings VALUES(?,?,?,?,?)',(uid,0,0,0,self._now()))
+            try:
+                from service import PROGRAMME
+                for w in range(1,13):
+                    for day,(session,exs) in PROGRAMME.items():
+                        for ex,sets,rr,kg,rir,rest in exs:
+                            self.db.q('INSERT INTO programme(user_id,week,day,session,exercise,sets,rep_range,start_weight,rir,rest_seconds) VALUES(?,?,?,?,?,?,?,?,?,?)',(uid,w,day,session,ex,sets,rr,kg,rir,rest))
+            except Exception: pass
+            self.db.commit()
         return uid
     def signup(self,email,password,name):
         data=self.auth.signup(email,password,name)
@@ -59,11 +68,9 @@ class CloudAccountService:
         if not uid or not token: raise PermissionError('Cloud session expired. Please log in again.')
         remote=self.cloud.pull(uid,token); local=table_rows(self.db,uid); local_ids={r['id'] for r in local}
         for rr in remote:
-            if rr['id'] not in local_ids:
-                known=self.db.q('SELECT 1 FROM cloud_record_state WHERE record_id=?',(rr['id'],)).fetchone()
-                if known:
-                    try:self.cloud._req('/rest/v1/pf_records?id=eq.'+rr['id']+'&user_id=eq.'+uid,'DELETE',token=token,prefer='return=minimal'); self.db.q('DELETE FROM cloud_record_state WHERE record_id=?',(rr['id'],))
-                    except Exception: pass
+            if rr['id'] not in local_ids and self.db.q('SELECT 1 FROM cloud_record_state WHERE record_id=?',(rr['id'],)).fetchone():
+                try:self.cloud._req('/rest/v1/pf_records?id=eq.'+rr['id']+'&user_id=eq.'+uid,'DELETE',token=token,prefer='return=minimal'); self.db.q('DELETE FROM cloud_record_state WHERE record_id=?',(rr['id'],))
+                except Exception: pass
         accepted=[]; conflicts=[]
         for rec in local:
             st=self.db.q('SELECT server_version FROM cloud_record_state WHERE record_id=?',(rec['id'],)).fetchone(); base=int(st['server_version']) if st else 0
