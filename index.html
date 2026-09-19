@@ -11,7 +11,7 @@ header{background:var(--ink);color:#fff;padding:18px 24px;display:flex;justify-c
 .brand{font-weight:800;font-size:20px}.tagline{font-size:13px;opacity:.72}.wrap{max-width:1180px;margin:0 auto;padding:24px 18px 50px}
 .card{background:var(--card);border:1px solid #00000008;border-radius:18px;padding:20px;box-shadow:0 4px 18px #00000008;margin-bottom:16px}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.two{grid-template-columns:2fr 1fr}.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.nav button,button{border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#fff;color:var(--ink);font-weight:650;cursor:pointer}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.nav button,button{border:1px solid var(--line);border-radius:11px;padding:10px 14px;background:#fff;color:var(--ink);font-weight:650;cursor:pointer;transition:transform .12s ease,background .12s ease,border-color .12s ease,opacity .12s ease}.nav button:hover,button:hover{transform:translateY(-1px)}button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .nav button.active,button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}button.danger{color:#a21c1c}
 .big{font-size:30px;font-weight:800;letter-spacing:-.5px}.muted{color:var(--muted)}.small{font-size:13px}.eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:800;color:var(--muted)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}.between{display:flex;justify-content:space-between;gap:12px;align-items:center}
@@ -25,9 +25,9 @@ svg{width:100%;height:100%;display:block}.axis{font-size:10px;fill:#8a8f97}
 .auth{max-width:520px;margin:50px auto}.auth h1{margin-bottom:4px}
 .toast{position:fixed;right:20px;bottom:20px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:12px;display:none;z-index:20}
 .empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed #d7dbe1;border-radius:12px}
-.notice{background:#f0f2f5;border-radius:12px;padding:12px;font-size:13px;color:#4f555e}
+.notice{background:#f0f2f5;border-radius:12px;padding:12px;font-size:13px;color:#4f555e}.quick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 18px}.quick button{text-align:left;padding:14px;background:#fff}.quick b{display:block;margin-bottom:4px}.quick span{font-size:12px;color:var(--muted)}.auth-actions{display:flex;gap:8px;flex-wrap:wrap}.password-wrap{display:grid;grid-template-columns:1fr auto;gap:8px}.password-wrap button{white-space:nowrap}.syncdot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#6f8f72;margin-right:6px}.mobile-spacer{display:none}
 @media(max-width:900px){.grid,.three,.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){header{padding:15px 16px}.wrap{padding:15px 12px 35px}.grid,.three,.two{grid-template-columns:1fr}.card{padding:16px;border-radius:15px}.setgrid{grid-template-columns:1fr 1fr}.tagline{display:none}.big{font-size:26px}}
+@media(max-width:600px){header{padding:15px 16px}.wrap{padding:15px 12px 95px}.grid,.three,.two,.quick{grid-template-columns:1fr}.card{padding:16px;border-radius:15px}.setgrid{grid-template-columns:1fr 1fr}.tagline{display:none}.big{font-size:26px}.nav{position:fixed;left:0;right:0;bottom:0;z-index:15;background:#fff;border-top:1px solid var(--line);padding:8px 8px max(8px,env(safe-area-inset-bottom));margin:0;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;box-shadow:0 -8px 24px #0000000d}.nav button{padding:10px 4px;border:0;border-radius:9px;font-size:11px;background:transparent}.nav button.active{background:var(--ink);color:#fff}.mobile-spacer{display:block;height:8px}.auth{margin:22px auto}.auth-actions{display:grid;grid-template-columns:1fr 1fr}.password-wrap{grid-template-columns:1fr auto}}
 </style>
 </head>
 <body>
@@ -38,9 +38,9 @@ svg{width:100%;height:100%;display:block}.axis{font-size:10px;fill:#8a8f97}
 <p class="muted">Train with a plan. Eat with purpose. See whether you're actually progressing.</p>
 <div class="form">
 <input id="email" type="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password (8+ characters)">
+<div class="password-wrap"><input id="password" type="password" placeholder="Password (8+ characters)"><button type="button" id="togglepass">Show</button></div>
 <input id="name" placeholder="Name (new accounts)">
-<div class="row"><button type="button" id="login" onclick="login()">Log in</button><button type="button" id="register" class="primary" onclick="register()">Create account</button></div>
+<div class="auth-actions"><button type="button" id="login" onclick="login()">Log in</button><button type="button" id="register" class="primary" onclick="register()">Create account</button></div>
 <div class="row"><button type="button" id="recover" onclick="recover()">Forgot password?</button><button type="button" id="resend" onclick="resend()">Resend confirmation</button></div>
 <div id="authmsg" class="muted small"></div>
 </div></section>
@@ -55,14 +55,15 @@ svg{width:100%;height:100%;display:block}.axis{font-size:10px;fill:#8a8f97}
 <div id="toast" class="toast"></div>
 <script>
 "use strict";
-var state={user:null};
+var state={user:null,session:null};
 function $(id){return document.getElementById(id)}
 function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function toast(t){var x=$("toast");x.textContent=t;x.style.display="block";setTimeout(function(){x.style.display="none"},2600)}
 function api(path,opt){var o=opt||{};o.headers=Object.assign({"Content-Type":"application/json"},o.headers||{});return fetch(path,o).then(function(r){return r.json().catch(function(){return {}}).then(function(d){if(!r.ok)throw Error(d.error||d.message||("Request failed: "+r.status));return d})})}
 function msg(t){$("authmsg").textContent=t||""}
-function login(){var e=$("email").value.trim(),p=$("password").value;if(!e||!p)return msg("Please enter your email and password.");msg("Logging in...");api("/api/auth/cloud/login",{method:"POST",body:JSON.stringify({email:e,password:p})}).then(function(d){state.user=d.user;open()}).catch(function(e){msg(e.message)})}
-function register(){var e=$("email").value.trim(),p=$("password").value,n=$("name").value.trim();if(!e||!p)return msg("Please enter your email and password.");if(p.length<8)return msg("Password must be at least 8 characters.");msg("Creating your account...");api("/api/auth/cloud/register",{method:"POST",body:JSON.stringify({email:e,password:p,display_name:n,redirect_to:location.origin})}).then(function(d){if(d.verification_required)return msg(d.message||"Account created. Check your email, then log in.");state.user=d.user;open()}).catch(function(e){msg(e.message)})}
+function busy(v,label){["login","register","recover","resend"].forEach(function(id){var b=$(id);if(b)b.disabled=!!v});if(label&&$("login"))$("login").textContent=label;else if($("login"))$("login").textContent="Log in"}
+function login(){var e=$("email").value.trim(),p=$("password").value;if(!e||!p)return msg("Please enter your email and password.");msg("Logging in...");busy(true,"Logging in...");api("/api/auth/cloud/login",{method:"POST",body:JSON.stringify({email:e,password:p})}).then(function(d){state.user=d.user;open()}).catch(function(e){msg(e.message)}).finally(function(){busy(false)})}
+function register(){var e=$("email").value.trim(),p=$("password").value,n=$("name").value.trim();if(!e||!p)return msg("Please enter your email and password.");if(p.length<8)return msg("Password must be at least 8 characters.");msg("Creating your account...");busy(true);api("/api/auth/cloud/register",{method:"POST",body:JSON.stringify({email:e,password:p,display_name:n,redirect_to:location.origin})}).then(function(d){if(d.verification_required)return msg(d.message||"Account created. Check your email, then log in.");state.user=d.user;open()}).catch(function(e){msg(e.message)}).finally(function(){busy(false)})}
 function resend(){var e=$("email").value.trim();if(!e)return msg("Enter your email address first.");msg("Sending confirmation email...");api("/api/auth/cloud/resend",{method:"POST",body:JSON.stringify({email:e,redirect_to:location.origin})}).then(function(d){msg(d.message||"Check your email.")}).catch(function(e){msg(e.message)})}
 function recover(){var e=$("email").value.trim();if(!e)return msg("Enter your email address first.");msg("Sending reset email...");api("/api/auth/cloud/recover",{method:"POST",body:JSON.stringify({email:e,redirect_to:location.origin})}).then(function(d){msg(d.message||"Check your email.")}).catch(function(e){msg(e.message)})}
 function open(){$("auth").classList.add("hidden");$("app").classList.remove("hidden");show("home")}
@@ -74,7 +75,8 @@ function show(p){document.querySelectorAll("[data-page]").forEach(function(b){b.
 
 function home(){api("/api/home").then(function(d){
 var cal=d.nutrition||{},ex=d.today_exercises||[];
-$("page").innerHTML='<div class="between"><div><div class="eyebrow">Today</div><h1 style="margin:3px 0">'+esc(d.day||"Training day")+'</h1><p class="muted">'+esc(d.session||"Recovery")+' · Week '+esc(d.week)+'</p></div><span class="pill">Rule engine active</span></div>'+
+state.session=d.session||"Workout";var displayName=(state.user&&state.user.display_name)||"";
+$("page").innerHTML='<div class="between"><div><div class="eyebrow">Today</div><h1 style="margin:3px 0">'+(displayName?("Morning, "+esc(displayName)):esc(d.day||"Training day"))+'</h1><p class="muted">'+esc(d.session||"Recovery")+' · Week '+esc(d.week)+'</p></div><span class="pill"><span class="syncdot"></span>Cloud connected</span></div><div class="quick"><button onclick="show(\'workout\')"><b>Start workout</b><span>Open todays planned session</span></button><button onclick="show(\'nutrition\')"><b>Log food</b><span>Update calories and protein</span></button><button onclick="show(\'progress\')"><b>Check progress</b><span>Weight, strength and review</span></button></div>'+
 '<div class="grid">'+metric("Calories",Math.round(cal.calories||0)+" / "+(cal.calorie_target||0),"kcal today",pct(cal.calories,cal.calorie_target))+metric("Protein",Math.round(cal.protein||0)+" / "+(cal.protein_target||0)+" g","daily target",pct(cal.protein,cal.protein_target))+metric("Weight",(d.weight||"—")+" kg","7-day average "+(d.seven_day_average||"—"))+metric("Training week","Week "+esc(d.week),"current programme")+'</div>'+
 '<div class="grid two"><div class="card"><div class="between"><div><h2 class="section-title">Todays workout</h2><span class="muted small">'+ex.length+' planned exercises</span></div><button class="primary" onclick="show(\'workout\')">Open workout</button></div>'+
 (ex.length?ex.map(function(x){return '<div class="exercise"><b>'+esc(x.exercise)+'</b><br><span class="pill">'+x.sets+' sets</span><span class="pill">'+esc(x.rep_range)+' reps</span><span class="pill">Target '+esc(x.today_target)+' kg</span></div>'}).join(""):'<div class="empty">No scheduled workout today.</div>')+'</div>'+
@@ -83,14 +85,14 @@ api("/api/review").then(function(r){$("coachbox").innerHTML='<div class="eyebrow
 }).catch(fail)}
 
 function workout(){api("/api/programme").then(function(d){
-var ex=d.exercises||[];var h='<div class="between"><div><div class="eyebrow">Training</div><h1 style="margin:3px 0">'+esc(d.session)+'</h1><p class="muted">Week '+d.week+' · '+d.date+'</p></div></div><div class="card">';
+var ex=d.exercises||[];state.session=d.session||"Workout";var h='<div class="between"><div><div class="eyebrow">Training</div><h1 style="margin:3px 0">'+esc(d.session)+'</h1><p class="muted">Week '+d.week+' · '+d.date+'</p></div></div><div class="card">';
 if(!ex.length)h+='<div class="empty">Recovery / optional walk today.</div>';
 ex.forEach(function(x,i){h+='<div class="exercise"><div class="between"><div><h3 style="margin:0">'+esc(x.exercise)+'</h3><span class="pill">'+x.sets+' sets · '+esc(x.rep_range)+'</span><span class="pill">Target '+esc(x.today_target)+' kg</span></div></div>'+
 '<div class="setgrid"><input id="kg'+i+'" type="number" step=".5" placeholder="Actual kg"><input id="reps'+i+'" placeholder="Reps: 10,9,8"><input id="rir'+i+'" type="number" step=".5" placeholder="Avg RIR"><select id="form'+i+'"><option value="Yes">Good form</option><option value="No">Needs work</option></select></div>'+
 '<div class="row" style="margin-top:9px"><button class="primary" onclick="saveWorkout('+i+',\''+esc(x.exercise).replace(/'/g,"\\'")+'\','+x.sets+',\''+esc(x.rep_range).replace(/'/g,"\\'")+'\','+x.today_target+')">Save exercise</button><span id="result'+i+'" class="muted small"></span></div></div>'});
 h+='</div><div class="notice">ProjectFit uses your completed reps, form and average RIR to calculate the next recommendation. You do not need to manually guess progression.</div>';$("page").innerHTML=h;
 }).catch(fail)}
-function saveWorkout(i,ex,sets,rr,target){var kg=Number($("kg"+i).value),rir=Number($("rir"+i).value),reps=($("reps"+i).value||"").split(",").map(function(v){return Number(v.trim())}).filter(function(v){return isFinite(v)});if(!kg||!reps.length)return toast("Enter actual kg and reps first.");api("/api/workouts/log",{method:"POST",body:JSON.stringify({date:new Date().toISOString().slice(0,10),session:state.session||"Workout",exercise:ex,target_sets:sets,rep_range:rr,recommended_kg:target,actual_kg:kg,reps:reps,avg_rir:rir,form_good:$("form"+i).value,completed:"Yes"})}).then(function(d){$("result"+i).textContent=d.recommendation||"Saved";toast("Exercise saved")}).catch(function(e){toast(e.message)})}
+function saveWorkout(i,ex,sets,rr,target){var kg=Number($("kg"+i).value),rirRaw=$("rir"+i).value.trim(),rir=rirRaw===""?null:Number(rirRaw),reps=($("reps"+i).value||"").split(",").map(function(v){return v.trim()}).filter(function(v){return v!==""}).map(Number).filter(function(v){return Number.isFinite(v)&&v>0});if(!kg||!reps.length)return toast("Enter actual kg and reps first.");api("/api/workouts/log",{method:"POST",body:JSON.stringify({date:new Date().toISOString().slice(0,10),session:state.session||"Workout",exercise:ex,target_sets:sets,rep_range:rr,recommended_kg:target,actual_kg:kg,reps:reps,avg_rir:rir,form_good:$("form"+i).value,completed:"Yes"})}).then(function(d){$("result"+i).textContent=d.recommendation||"Saved";toast("Exercise saved")}).catch(function(e){toast(e.message)})}
 
 function nutrition(){api("/api/nutrition").then(function(d){
 var c=d.calorie_target||0,p=d.protein_target||0;var h='<div class="between"><div><div class="eyebrow">Nutrition</div><h1 style="margin:3px 0">Today</h1><p class="muted">Food-first tracking against your targets.</p></div></div><div class="grid">'+metric("Calories",Math.round(d.calories)+" / "+c,"remaining "+Math.round(d.remaining_calories||0)+" kcal",pct(d.calories,c))+metric("Protein",Math.round(d.protein)+" / "+p+" g","remaining "+Math.round(d.remaining_protein||0)+" g",pct(d.protein,p))+metric("Carbs",Math.round(d.carbs||0)+" g","today")+metric("Fat",Math.round(d.fat||0)+" g","today")+'</div>'+
@@ -110,7 +112,7 @@ function saveProfile(){api("/api/profile",{method:"POST",body:JSON.stringify({di
 function syncNow(){api("/api/cloud/sync",{method:"POST",body:"{}"}).then(function(d){toast("Synced "+(d.downloaded||0)+" records")}).catch(function(e){toast(e.message)})}
 function exportData(){fetch("/api/account/export").then(function(r){return r.blob().then(function(b){var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="projectfit-data-export.json";a.click();URL.revokeObjectURL(a.href)})}).catch(function(e){toast(e.message)})}
 function logout(){api("/api/auth/cloud/logout",{method:"POST",body:"{}"}).finally(function(){location.reload()})}
-function initProjectFit(){document.querySelectorAll("[data-page]").forEach(function(b){b.addEventListener("click",function(){show(b.dataset.page)})});api("/api/auth/me").then(function(d){if(d.authenticated){state.user=d.user;open()}}).catch(function(){})}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",initProjectFit)}else{initProjectFit()}
+function initProjectFit(){document.querySelectorAll("[data-page]").forEach(function(b){b.addEventListener("click",function(){show(b.dataset.page)})});var tp=$("togglepass");if(tp)tp.addEventListener("click",function(){var p=$("password"),showing=p.type==="text";p.type=showing?"password":"text";tp.textContent=showing?"Show":"Hide"});["email","password"].forEach(function(id){var el=$(id);if(el)el.addEventListener("keydown",function(e){if(e.key==="Enter")login()})});api("/api/auth/me").then(function(d){if(d.authenticated){state.user=d.user;open()}}).catch(function(){})}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",initProjectFit)}else{initProjectFit()}
 </script>
 </body>
 </html>
