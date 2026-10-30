@@ -6,6 +6,7 @@ from db import DB
 from service import ProjectFit
 from auth_service import AuthService
 from cloud_service import CloudAccountService
+from health import health_status
 try:
     from projectfit_config import SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
     os.environ.setdefault('SUPABASE_URL', SUPABASE_URL); os.environ.setdefault('SUPABASE_PUBLISHABLE_KEY', SUPABASE_PUBLISHABLE_KEY)
@@ -35,7 +36,8 @@ class Handler(BaseHTTPRequestHandler):
         if u.path in ('/','/index.html'):
             return self.serve('index.html','text/html; charset=utf-8')
         try:
-            if u.path=='/api/health': return self.json({'ok':True,'service':'ProjectFit','rule_version':'workbook_v1','app_version':'2.2'})
+            if u.path=='/api/health':
+                payload,status=health_status(db); return self.json(payload,status)
             if u.path=='/api/cloud/status':
                 return self.json({'enabled':bool(cloud),'provider':'Supabase','project_url':os.getenv('SUPABASE_URL','')})
             if u.path=='/api/auth/me':
