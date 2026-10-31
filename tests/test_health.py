@@ -1,3 +1,4 @@
+import sqlite3
 import unittest
 
 from health import health_status
@@ -22,6 +23,19 @@ class UnavailableDatabase:
         raise RuntimeError("internal connection detail must not be exposed")
 
 
+class SQLiteDatabase:
+    """Small adapter matching the application's DB.q interface."""
+
+    def __init__(self):
+        self.connection = sqlite3.connect(":memory:")
+
+    def q(self, sql):
+        return self.connection.execute(sql)
+
+    def close(self):
+        self.connection.close()
+
+
 class HealthStatusTests(unittest.TestCase):
     def test_reports_ready_when_database_query_succeeds(self):
         database = HealthyDatabase()
@@ -40,6 +54,19 @@ class HealthStatusTests(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["database"], "unavailable")
         self.assertNotIn("internal connection detail", str(payload))
+
+    def test_reports_ready_and_unavailable_with_real_sqlite(self):
+        database = SQLiteDatabase()
+        payload, status = health_status(database)
+        self.assertEqual(status, 200)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["database"], "ok")
+
+        database.close()
+        payload, status = health_status(database)
+        self.assertEqual(status, 503)
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["database"], "unavailable")
 
 
 if __name__ == "__main__":
