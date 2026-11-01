@@ -7,6 +7,7 @@ from service import ProjectFit
 from auth_service import AuthService
 from cloud_service import CloudAccountService
 from health import health_status
+from api_errors import respond_with_internal_error
 try:
     from projectfit_config import SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
     os.environ.setdefault('SUPABASE_URL', SUPABASE_URL); os.environ.setdefault('SUPABASE_PUBLISHABLE_KEY', SUPABASE_PUBLISHABLE_KEY)
@@ -55,7 +56,8 @@ class Handler(BaseHTTPRequestHandler):
             if u.path=='/api/account/export': return self.json(auth.export_user(uid),200,{'Content-Disposition':'attachment; filename="projectfit-data-export.json"'})
             return self.json({'error':'Not found'},404)
         except PermissionError as e:return self.json({'error':str(e)},401)
-        except Exception as e:return self.json({'error':str(e)},400)
+        except ValueError as e:return self.json({'error':str(e)},400)
+        except Exception as e:return respond_with_internal_error(self.json,e)
     def do_POST(self):
         try:
             p=self.body(); path=urlparse(self.path).path
@@ -105,7 +107,8 @@ class Handler(BaseHTTPRequestHandler):
             if path in routes:return self.json(routes[path](uid,p))
             return self.json({'error':'Not found'},404)
         except PermissionError as e:return self.json({'error':str(e)},401)
-        except Exception as e:return self.json({'error':str(e)},400)
+        except ValueError as e:return self.json({'error':str(e)},400)
+        except Exception as e:return respond_with_internal_error(self.json,e)
     def serve(self,name,ctype):
         path=os.path.join(ROOT,name)
         if not os.path.exists(path):return self.json({'error':'file not found'},404)
