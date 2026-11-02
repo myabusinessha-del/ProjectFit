@@ -49,16 +49,47 @@ def calculate_targets(age,height_cm,weight_kg,sex,activity,goal):
 def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=False, use_whey=True):
     choices={'breakfast':MEALS[0] if use_whey else MEALS[1],'lunch':MEALS[2],'dinner':MEALS[4],'snack':MEALS[6] if use_whey else MEALS[7]}
     if vegetarian: choices['lunch']=MEALS[0]; choices['dinner']=MEALS[1]
-    base=[{'meal':choices[k][0],'name':choices[k][1],'items':list(choices[k][2])} for k in ('breakfast','lunch','snack','dinner')]
+    try:
+        meals_per_day = int(meals_per_day)
+    except (TypeError, ValueError):
+        meals_per_day = 4
+    if meals_per_day not in (3, 4, 5):
+        meals_per_day = 4
+
+    def meal_entry(key):
+        meal, name, items = choices[key]
+        return {'meal': meal, 'name': name, 'items': list(items)}
+
+    breakfast = meal_entry('breakfast')
+    lunch = meal_entry('lunch')
+    snack = meal_entry('snack')
+    dinner = meal_entry('dinner')
+
+    if meals_per_day == 3:
+        breakfast['name'] += ' + snack'
+        breakfast['items'].extend(snack['items'])
+        base = [breakfast, lunch, dinner]
+    elif meals_per_day == 5:
+        if use_whey:
+            snack_one = {'meal': 'Snack', 'name': 'Whey shake', 'items': [('whey', 35), ('milk', 200)]}
+            snack_two = {'meal': 'Snack', 'name': 'Banana snack', 'items': [('banana', 100)]}
+        else:
+            snack_one = {'meal': 'Snack', 'name': 'Egg and peanut snack', 'items': [('eggs', 100), ('peanut', 15)]}
+            snack_two = {'meal': 'Snack', 'name': 'Banana snack', 'items': [('banana', 100)]}
+        base = [breakfast, lunch, snack_one, snack_two, dinner]
+    else:
+        base = [breakfast, lunch, snack, dinner]
+
+    protein_adjustment_meal = base[0] if meals_per_day == 3 else base[2]
     macros=calc_food([(i,g) for m in base for i,g in m['items']])
     if macros['protein'] < protein:
         extra=max(0,(protein-macros['protein'])/0.225); base[1]['items'].append(('chicken',min(150,extra))); macros=calc_food([(i,g) for m in base for i,g in m['items']])
     if macros['protein'] < protein and use_whey:
-        extra=max(0,(protein-macros['protein'])/0.75); base[2]['items'].append(('whey',min(35,extra))); macros=calc_food([(i,g) for m in base for i,g in m['items']])
+        extra=max(0,(protein-macros['protein'])/0.75); protein_adjustment_meal['items'].append(('whey',min(35,extra))); macros=calc_food([(i,g) for m in base for i,g in m['items']])
     remaining=max(0,calories-macros['calories'])
     if remaining:
         base[1]['items'].append(('rice',min(180,remaining/3.6))); macros=calc_food([(i,g) for m in base for i,g in m['items']]); remaining=max(0,calories-macros['calories'])
-        if remaining: base[3]['items'].append(('potato',min(250,remaining/0.77)))
+        if remaining: base[-1]['items'].append(('potato',min(250,remaining/0.77)))
     macros=calc_food([(i,g) for m in base for i,g in m['items']]); fat_gap=max(0,70-macros['fat'])
     if fat_gap:
         pb=min(50,fat_gap/0.5); base[0]['items'].append(('peanut',pb)); added=pb*5.88
