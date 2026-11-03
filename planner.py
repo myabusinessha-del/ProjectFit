@@ -83,7 +83,13 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     protein_adjustment_meal = base[0] if meals_per_day == 3 else base[2]
     macros=calc_food([(i,g) for m in base for i,g in m['items']])
     if macros['protein'] < protein:
-        extra=max(0,(protein-macros['protein'])/0.225); base[1]['items'].append(('chicken',min(150,extra))); macros=calc_food([(i,g) for m in base for i,g in m['items']])
+        if vegetarian:
+            protein_food, protein_per_gram, adjustment_meal = 'eggs', 0.126, base[-1]
+        else:
+            protein_food, protein_per_gram, adjustment_meal = 'chicken', 0.225, base[1]
+        extra=max(0,(protein-macros['protein'])/protein_per_gram)
+        adjustment_meal['items'].append((protein_food,min(150,extra)))
+        macros=calc_food([(i,g) for m in base for i,g in m['items']])
     if macros['protein'] < protein and use_whey:
         extra=max(0,(protein-macros['protein'])/0.75); protein_adjustment_meal['items'].append(('whey',min(35,extra))); macros=calc_food([(i,g) for m in base for i,g in m['items']])
     remaining=max(0,calories-macros['calories'])
