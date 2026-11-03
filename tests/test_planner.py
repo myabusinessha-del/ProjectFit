@@ -46,6 +46,24 @@ class MealCountTests(unittest.TestCase):
                 result = plan_for(2200, 100, 500, meals_per_day=value)
                 self.assertEqual(result["meals_per_day"], 4)
 
+    def test_vegetarian_protein_adjustment_never_adds_meat_or_fish(self):
+        for count in (3, 4, 5):
+            for use_whey in (False, True):
+                with self.subTest(count=count, use_whey=use_whey):
+                    result = plan_for(
+                        2400, 220, 1000, meals_per_day=count,
+                        vegetarian=True, use_whey=use_whey,
+                    )
+                    foods = {
+                        item["food"]
+                        for meal in result["daily"]
+                        for item in meal["items"]
+                    }
+                    self.assertNotIn("Chicken breast", foods)
+                    self.assertNotIn("Lean beef mince", foods)
+                    self.assertNotIn("Tuna", foods)
+                    self.assertIn("Eggs", foods)
+
 
 if __name__ == "__main__":
     unittest.main()
