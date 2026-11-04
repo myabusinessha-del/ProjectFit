@@ -23,6 +23,10 @@ MEALS = [
     ('Snack','Whey banana shake', [('whey',35),('banana',100),('milk',200)]),
     ('Snack','Egg peanut snack', [('eggs',100),('peanut',15),('banana',100)]),
 ]
+VEGETARIAN_MEALS = {
+    'lunch': ('Lunch', 'Egg rice bowl', [('eggs',150),('rice',100),('frozenveg',200)]),
+    'dinner': ('Dinner', 'Egg and potato bowl', [('eggs',150),('potato',300),('frozenveg',200)]),
+}
 def calc_food(items):
     out={k:0.0 for k in ('calories','protein','carbs','fat','fibre')}
     for item,g in items:
@@ -48,7 +52,7 @@ def calculate_targets(age,height_cm,weight_kg,sex,activity,goal):
     return {'bmr':round(bmr),'tdee':round(tdee),'calories':calories,'protein':protein,'carbs':carbs,'fat':fat,'fibre':30,'method':'Mifflin-St Jeor + activity/goal adjustment; planning estimate'}
 def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=False, use_whey=True):
     choices={'breakfast':MEALS[0] if use_whey else MEALS[1],'lunch':MEALS[2],'dinner':MEALS[4],'snack':MEALS[6] if use_whey else MEALS[7]}
-    if vegetarian: choices['lunch']=MEALS[0]; choices['dinner']=MEALS[1]
+    if vegetarian: choices.update(VEGETARIAN_MEALS)
     try:
         meals_per_day = int(meals_per_day)
     except (TypeError, ValueError):
