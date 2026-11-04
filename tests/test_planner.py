@@ -46,6 +46,19 @@ class MealCountTests(unittest.TestCase):
                 result = plan_for(2200, 100, 500, meals_per_day=value)
                 self.assertEqual(result["meals_per_day"], 4)
 
+    def test_vegetarian_lunch_and_dinner_use_their_own_meal_categories(self):
+        for count in (3, 4, 5):
+            for use_whey in (False, True):
+                with self.subTest(count=count, use_whey=use_whey):
+                    result = plan_for(
+                        2400, 150, 1000, meals_per_day=count,
+                        vegetarian=True, use_whey=use_whey,
+                    )
+                    self.assertEqual(result["daily"][1]["meal"], "Lunch")
+                    self.assertEqual(result["daily"][1]["name"], "Egg rice bowl")
+                    self.assertEqual(result["daily"][-1]["meal"], "Dinner")
+                    self.assertEqual(result["daily"][-1]["name"], "Egg and potato bowl")
+
     def test_vegetarian_protein_adjustment_never_adds_meat_or_fish(self):
         for count in (3, 4, 5):
             for use_whey in (False, True):
