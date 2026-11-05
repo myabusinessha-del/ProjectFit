@@ -13,7 +13,7 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("Vegetarian meals", self.html)
 
     def test_planner_request_sends_vegetarian_selection(self):
-        self.assertIn('vegetarian: $("plvegetarian").checked', self.html.replace("vegetarian:$(", "vegetarian: $("))
+        self.assertIn('vegetarian:$("plvegetarian").checked', self.html)
 
 
 if __name__ == "__main__":
