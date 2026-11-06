@@ -41,7 +41,9 @@ class CloudAccountService:
         if not cookie:return None
         return self.db.q('SELECT * FROM cloud_sessions WHERE token_hash=?',(self._hash(cookie),)).fetchone()
     def user_id(self,cookie):
-        row=self.token_from_cookie(cookie); return row['user_id'] if row else None
+        row=self.token_from_cookie(cookie)
+        if not row or not self.access(cookie): return None
+        return row['user_id']
     def access(self,cookie):
         row=self.token_from_cookie(cookie)
         if not row:return None
