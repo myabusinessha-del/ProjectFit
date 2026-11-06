@@ -27,30 +27,77 @@ VEGETARIAN_MEALS = {
     'lunch': ('Lunch', 'Egg rice bowl', [('eggs',150),('rice',100),('frozenveg',200)]),
     'dinner': ('Dinner', 'Egg and potato bowl', [('eggs',150),('potato',300),('frozenveg',200)]),
 }
+
+
+def _validated_number(value, label, minimum=None, strict_minimum=False):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f'{label} must be a valid number.')
+    if not isfinite(number):
+        raise ValueError(f'{label} must be a finite number.')
+    if minimum is not None:
+        invalid = number <= minimum if strict_minimum else number < minimum
+        if invalid:
+            qualifier = 'greater than' if strict_minimum else 'at least'
+            raise ValueError(f'{label} must be {qualifier} {minimum}.')
+    return number
+
+
 def calc_food(items):
     out={k:0.0 for k in ('calories','protein','carbs','fat','fibre')}
     for item,g in items:
         c=next(x for x in CATALOG if x['id']==item); f=g/100
         out['calories']+=c['kcal']*f; out['protein']+=c['protein']*f; out['carbs']+=c['carbs']*f; out['fat']+=c['fat']*f; out['fibre']+=c['fibre']*f
     return out
+
+
 def cost_for(items):
     total=0
     for item,g in items:
         c=next(x for x in CATALOG if x['id']==item); total += g/c['unit_g']*c['price']
     return total
+
+
 def add_scaled(target, meals):
     return [{'meal':meal_name,'name':meal_name,'items':list(meal_items)} for meal_name,meal_items in meals]
+
+
 def calculate_targets(age,height_cm,weight_kg,sex,activity,goal):
-    s=5 if str(sex).lower().startswith('m') else -161
-    bmr=10*weight_kg+6.25*height_cm-5*age+s
+    age = _validated_number(age, 'Age', 0, strict_minimum=True)
+    height_cm = _validated_number(height_cm, 'Height', 0, strict_minimum=True)
+    weight_kg = _validated_number(weight_kg, 'Weight', 0, strict_minimum=True)
+
+    sex_key = str(sex or '').strip().lower()
+    if sex_key in ('male', 'm'):
+        s = 5
+    elif sex_key in ('female', 'f'):
+        s = -161
+    else:
+        raise ValueError('Sex must be Male or Female for this calculation.')
+
     factors={'sedentary':1.2,'light':1.375,'moderate':1.55,'high':1.725,'very_high':1.9}
-    tdee=bmr*factors.get(activity,1.55); adj={'lose':0.80,'recomp':0.90,'maintain':1.0,'gain':1.10}.get(goal,1.0)
-    calories=round(tdee*adj/50)*50
-    protein=round(max(1.6,2.0 if goal in ('lose','recomp') else 1.6)*weight_kg/5)*5
+    activity_key = str(activity or '').strip().lower()
+    if activity_key not in factors:
+        raise ValueError('Activity must be one of: sedentary, light, moderate, high, very_high.')
+
+    adj={'lose':0.80,'recomp':0.90,'maintain':1.0,'gain':1.10}
+    goal_key = str(goal or '').strip().lower()
+    if goal_key not in adj:
+        raise ValueError('Goal must be one of: lose, recomp, maintain, gain.')
+
+    bmr=10*weight_kg+6.25*height_cm-5*age+s
+    tdee=bmr*factors[activity_key]; calories=round(tdee*adj[goal_key]/50)*50
+    protein=round(max(1.6,2.0 if goal_key in ('lose','recomp') else 1.6)*weight_kg/5)*5
     fat=round(max(0.7*weight_kg, calories*0.25/9)/5)*5
     carbs=max(0,round((calories-protein*4-fat*9)/4/5)*5)
     return {'bmr':round(bmr),'tdee':round(tdee),'calories':calories,'protein':protein,'carbs':carbs,'fat':fat,'fibre':30,'method':'Mifflin-St Jeor + activity/goal adjustment; planning estimate'}
+
+
 def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=False, use_whey=True):
+    calories = _validated_number(calories, 'Calorie target', 0, strict_minimum=True)
+    protein = _validated_number(protein, 'Protein target', 0)
+
     try:
         days = int(days)
     except (TypeError, ValueError):
