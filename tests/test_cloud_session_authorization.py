@@ -24,6 +24,11 @@ class CloudSessionAuthorizationTests(unittest.TestCase):
         self.service = CloudAccountService.__new__(CloudAccountService)
         self.service.db = self.db
         self.service.auth = FakeAuth()
+        self.db.q(
+            "INSERT INTO users(id, display_name, timezone, created_at) VALUES(?,?,?,?)",
+            ("user-123", "Test user", "Africa/Johannesburg", datetime.now(timezone.utc).isoformat()),
+        )
+        self.db.commit()
 
     def tearDown(self):
         self.db.close()
