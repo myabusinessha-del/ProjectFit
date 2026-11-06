@@ -1,4 +1,4 @@
-from math import ceil
+from math import ceil, isfinite
 CATALOG = [
     {'id':'oats','name':'Oats','unit_g':1000,'price':45,'kcal':389,'protein':16.9,'carbs':66.3,'fat':6.9,'fibre':10.6,'stores':['Checkers','Pick n Pay','Woolworths']},
     {'id':'eggs','name':'Eggs','unit_g':24*50,'price':70,'kcal':143,'protein':12.6,'carbs':0.7,'fat':9.5,'fibre':0,'stores':['Checkers','Pick n Pay','Woolworths']},
@@ -51,6 +51,20 @@ def calculate_targets(age,height_cm,weight_kg,sex,activity,goal):
     carbs=max(0,round((calories-protein*4-fat*9)/4/5)*5)
     return {'bmr':round(bmr),'tdee':round(tdee),'calories':calories,'protein':protein,'carbs':carbs,'fat':fat,'fibre':30,'method':'Mifflin-St Jeor + activity/goal adjustment; planning estimate'}
 def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=False, use_whey=True):
+    try:
+        days = int(days)
+    except (TypeError, ValueError):
+        raise ValueError('Days must be a whole number between 1 and 14.')
+    if days < 1 or days > 14:
+        raise ValueError('Days must be between 1 and 14.')
+
+    try:
+        budget = float(budget)
+    except (TypeError, ValueError):
+        raise ValueError('Budget must be a non-negative number.')
+    if not isfinite(budget) or budget < 0:
+        raise ValueError('Budget must be a non-negative number.')
+
     choices={'breakfast':MEALS[0] if use_whey else MEALS[1],'lunch':MEALS[2],'dinner':MEALS[4],'snack':MEALS[6] if use_whey else MEALS[7]}
     if vegetarian: choices.update(VEGETARIAN_MEALS)
     try:
