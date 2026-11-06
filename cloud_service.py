@@ -105,7 +105,10 @@ class CloudAccountService:
     def delete_account(self,cookie):
         row=self.token_from_cookie(cookie); uid=row['user_id'] if row else None; token=self.access(cookie)
         if not uid or not token: raise PermissionError('Cloud session expired.')
-        self.cloud.delete_all(uid,token); self.db.q('DELETE FROM users WHERE id=?',(uid,)); self.db.commit(); self.logout(cookie); return {'ok':True}
+        # Do not partially delete application data: complete deletion also requires
+        # trusted-server removal of the Supabase Auth user and related profile/session
+        # rows. This service currently has no configured admin deletion capability.
+        raise ValueError('Account deletion is temporarily unavailable because complete Supabase account cleanup is not configured. No account data has been changed. Please contact support.')
     def export_cloud(self,cookie):
         row=self.token_from_cookie(cookie); uid=row['user_id'] if row else None; token=self.access(cookie)
         if not uid or not token: raise PermissionError('Cloud session expired.')
