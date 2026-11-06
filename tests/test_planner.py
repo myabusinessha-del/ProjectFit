@@ -1,6 +1,6 @@
 import unittest
 
-from planner import plan_for
+from planner import calculate_targets, plan_for
 
 
 class MealCountTests(unittest.TestCase):
@@ -103,6 +103,70 @@ class PlannerInputValidationTests(unittest.TestCase):
                 result = plan_for(2200, 100, 0, days=days)
                 self.assertEqual(result["days"], days)
                 self.assertEqual(result["budget"], 0.0)
+
+    def test_rejects_non_positive_or_non_finite_calorie_targets(self):
+        for calories in (0, -1, float("inf"), float("nan"), "invalid", None):
+            with self.subTest(calories=calories):
+                with self.assertRaisesRegex(ValueError, "Calorie target"):
+                    plan_for(calories, 100, 500)
+
+    def test_rejects_negative_or_non_finite_protein_targets(self):
+        for protein in (-1, float("inf"), float("nan"), "invalid", None):
+            with self.subTest(protein=protein):
+                with self.assertRaisesRegex(ValueError, "Protein target"):
+                    plan_for(2200, protein, 500)
+
+
+class NutritionTargetValidationTests(unittest.TestCase):
+    def test_rejects_invalid_age_height_and_weight(self):
+        valid = {
+            "age": 30,
+            "height_cm": 180,
+            "weight_kg": 80,
+            "sex": "Male",
+            "activity": "moderate",
+            "goal": "maintain",
+        }
+        invalid_values = (0, -1, float("inf"), float("nan"), "invalid", None)
+        for field in ("age", "height_cm", "weight_kg"):
+            for value in invalid_values:
+                with self.subTest(field=field, value=value):
+                    inputs = dict(valid)
+                    inputs[field] = value
+                    with self.assertRaisesRegex(ValueError, field.capitalize()):
+                        calculate_targets(**inputs)
+
+    def test_rejects_unknown_sex_activity_and_goal_instead_of_guessing(self):
+        valid = {
+            "age": 30,
+            "height_cm": 180,
+            "weight_kg": 80,
+            "sex": "Male",
+            "activity": "moderate",
+            "goal": "maintain",
+        }
+        invalid_values = (
+            ("sex", "unspecified"),
+            ("activity", "extreme"),
+            ("goal", "bulk"),
+        )
+        for field, value in invalid_values:
+            with self.subTest(field=field, value=value):
+                inputs = dict(valid)
+                inputs[field] = value
+                with self.assertRaises(ValueError):
+                    calculate_targets(**inputs)
+
+    def test_accepts_numeric_strings_and_short_sex_codes(self):
+        result = calculate_targets(
+            age="30",
+            height_cm="180",
+            weight_kg="80",
+            sex="M",
+            activity="moderate",
+            goal="maintain",
+        )
+        self.assertEqual(result["bmr"], 1780)
 
 
 if __name__ == "__main__":
