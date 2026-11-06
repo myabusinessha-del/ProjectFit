@@ -128,12 +128,13 @@ class NutritionTargetValidationTests(unittest.TestCase):
             "goal": "maintain",
         }
         invalid_values = (0, -1, float("inf"), float("nan"), "invalid", None)
+        expected_labels = {"age": "Age", "height_cm": "Height", "weight_kg": "Weight"}
         for field in ("age", "height_cm", "weight_kg"):
             for value in invalid_values:
                 with self.subTest(field=field, value=value):
                     inputs = dict(valid)
                     inputs[field] = value
-                    with self.assertRaisesRegex(ValueError, field.capitalize()):
+                    with self.assertRaisesRegex(ValueError, expected_labels[field]):
                         calculate_targets(**inputs)
 
     def test_rejects_unknown_sex_activity_and_goal_instead_of_guessing(self):
