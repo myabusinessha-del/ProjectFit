@@ -78,5 +78,32 @@ class MealCountTests(unittest.TestCase):
                     self.assertIn("Eggs", foods)
 
 
+class PlannerInputValidationTests(unittest.TestCase):
+    def test_rejects_days_outside_supported_range(self):
+        for days in (0, -1, 15):
+            with self.subTest(days=days):
+                with self.assertRaisesRegex(ValueError, "between 1 and 14"):
+                    plan_for(2200, 100, 500, days=days)
+
+    def test_rejects_non_integer_days(self):
+        for days in (None, "seven"):
+            with self.subTest(days=days):
+                with self.assertRaisesRegex(ValueError, "whole number"):
+                    plan_for(2200, 100, 500, days=days)
+
+    def test_rejects_negative_or_non_finite_budget(self):
+        for budget in (-1, float("inf"), float("nan")):
+            with self.subTest(budget=budget):
+                with self.assertRaisesRegex(ValueError, "non-negative"):
+                    plan_for(2200, 100, budget)
+
+    def test_accepts_zero_budget_and_supported_day_boundaries(self):
+        for days in (1, 14):
+            with self.subTest(days=days):
+                result = plan_for(2200, 100, 0, days=days)
+                self.assertEqual(result["days"], days)
+                self.assertEqual(result["budget"], 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
