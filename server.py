@@ -53,7 +53,13 @@ class Handler(BaseHTTPRequestHandler):
             if u.path=='/api/progress': return self.json(app.progress_summary(uid,d))
             if u.path=='/api/review': return self.json(app.progress_review(uid))
             if u.path=='/api/profile': return self.json(app.profile(uid))
-            if u.path=='/api/account/export': return self.json(auth.export_user(uid),200,{'Content-Disposition':'attachment; filename="projectfit-data-export.json"'})
+            if u.path=='/api/account/export':
+                cloud_cookie=self.cloud_token()
+                if cloud and cloud.user_id(cloud_cookie):
+                    payload=cloud.export_cloud(cloud_cookie)
+                else:
+                    payload=auth.export_user(uid)
+                return self.json(payload,200,{'Content-Disposition':'attachment; filename="projectfit-data-export.json"'})
             return self.json({'error':'Not found'},404)
         except PermissionError as e:return self.json({'error':str(e)},401)
         except ValueError as e:return self.json({'error':str(e)},400)
