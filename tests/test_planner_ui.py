@@ -36,5 +36,12 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("Complete your age, height and sex in Profile", self.html)
 
 
+    def test_planner_can_keep_saved_manual_targets(self):
+        self.assertIn('id="plcalculate" type="checkbox" checked', self.html)
+        self.assertIn("if(!useCalculated)", self.html)
+        self.assertIn("saved.calorie_target", self.html)
+        self.assertIn("saved.protein_target", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
