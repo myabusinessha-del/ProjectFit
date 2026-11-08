@@ -170,5 +170,24 @@ class NutritionTargetValidationTests(unittest.TestCase):
         self.assertEqual(result["bmr"], 1780)
 
 
+class PlannerBudgetPeriodTests(unittest.TestCase):
+    def test_weekly_budget_is_prorated_to_selected_plan_duration(self):
+        for days, expected in ((1, 100.0), (7, 700.0), (14, 1400.0)):
+            with self.subTest(days=days):
+                result = plan_for(2200, 100, 700, days=days)
+                self.assertEqual(result["budget_for_plan"], expected)
+
+    def test_budget_status_uses_the_prorated_plan_budget(self):
+        baseline = plan_for(2200, 100, 0, days=14)
+        weekly_budget = baseline["estimated_total"] / 2
+
+        at_budget = plan_for(2200, 100, weekly_budget, days=14)
+        self.assertEqual(at_budget["budget_for_plan"], baseline["estimated_total"])
+        self.assertEqual(at_budget["budget_status"], "WITHIN BUDGET")
+
+        below_budget = plan_for(2200, 100, weekly_budget - 0.01, days=14)
+        self.assertEqual(below_budget["budget_status"], "OVER BUDGET")
+
+
 if __name__ == "__main__":
     unittest.main()
