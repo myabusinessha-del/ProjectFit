@@ -86,10 +86,16 @@ class PlannerInputValidationTests(unittest.TestCase):
                     plan_for(2200, 100, 500, days=days)
 
     def test_rejects_non_integer_days(self):
-        for days in (None, "seven"):
+        for days in (None, "seven", 1.5, 7.25, True, False, float("inf"), float("nan")):
             with self.subTest(days=days):
                 with self.assertRaisesRegex(ValueError, "whole number"):
                     plan_for(2200, 100, 500, days=days)
+
+    def test_accepts_whole_number_days_as_integer_float_or_numeric_string(self):
+        for days in (1, 7.0, "14"):
+            with self.subTest(days=days):
+                result = plan_for(2200, 100, 500, days=days)
+                self.assertEqual(result["days"], int(days))
 
     def test_rejects_negative_or_non_finite_budget(self):
         for budget in (-1, float("inf"), float("nan")):
