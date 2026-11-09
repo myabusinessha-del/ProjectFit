@@ -98,10 +98,15 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     calories = _validated_number(calories, 'Calorie target', 0, strict_minimum=True)
     protein = _validated_number(protein, 'Protein target', 0)
 
+    if isinstance(days, bool):
+        raise ValueError('Days must be a whole number between 1 and 14.')
     try:
-        days = int(days)
+        days_number = float(days)
     except (TypeError, ValueError):
         raise ValueError('Days must be a whole number between 1 and 14.')
+    if not isfinite(days_number) or not days_number.is_integer():
+        raise ValueError('Days must be a whole number between 1 and 14.')
+    days = int(days_number)
     if days < 1 or days > 14:
         raise ValueError('Days must be between 1 and 14.')
 
