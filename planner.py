@@ -184,4 +184,27 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         shopping.append({'food':name,'required_g':round(grams),'pack_g':c['unit_g'],'packs':packs,'price_per_pack':c['price'],'estimated_cost':round(packs*c['price'],2),'stores':c['stores']})
     total_cost=sum(x['estimated_cost'] for x in shopping)
     budget_for_plan = budget * days / 7
-    return {'targets':{'calories':calories,'protein':protein,'budget':budget},'days':days,'meals_per_day':len(daily),'daily':daily,'daily_totals':daily_tot,'shopping':shopping,'estimated_total':round(total_cost,2),'budget':budget,'budget_for_plan':round(budget_for_plan,2),'budget_status':'WITHIN BUDGET' if total_cost<=budget_for_plan else 'OVER BUDGET','catalogue_note':'Weekly budget is prorated to the selected plan duration. Prices are planning estimates; verify current pack prices and availability in-store/online.'}
+    target_comparison = {}
+    for key, target in (('calories', calories), ('protein', protein)):
+        actual = round(daily_tot[key], 1)
+        target_value = round(target, 1)
+        target_comparison[key] = {
+            'target': target_value,
+            'actual': actual,
+            'difference': round(actual - target_value, 1),
+        }
+
+    return {
+        'targets': {'calories': calories, 'protein': protein, 'budget': budget},
+        'days': days,
+        'meals_per_day': len(daily),
+        'daily': daily,
+        'daily_totals': daily_tot,
+        'target_comparison': target_comparison,
+        'shopping': shopping,
+        'estimated_total': round(total_cost, 2),
+        'budget': budget,
+        'budget_for_plan': round(budget_for_plan, 2),
+        'budget_status': 'WITHIN BUDGET' if total_cost <= budget_for_plan else 'OVER BUDGET',
+        'catalogue_note': 'Weekly budget is prorated to the selected plan duration. Prices are planning estimates; verify current pack prices and availability in-store/online.',
+    }

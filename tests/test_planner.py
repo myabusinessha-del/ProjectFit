@@ -195,5 +195,29 @@ class PlannerBudgetPeriodTests(unittest.TestCase):
         self.assertEqual(below_budget["budget_status"], "OVER BUDGET")
 
 
+class PlannerTargetComparisonTests(unittest.TestCase):
+    def test_target_comparison_reports_signed_calorie_and_protein_differences(self):
+        above = plan_for(1000, 30, 500)
+        below = plan_for(4000, 250, 500)
+
+        for result in (above, below):
+            comparison = result["target_comparison"]
+            for key in ("calories", "protein"):
+                with self.subTest(result=result, key=key):
+                    target = result["targets"][key]
+                    actual = round(result["daily_totals"][key], 1)
+                    self.assertEqual(comparison[key]["target"], round(target, 1))
+                    self.assertEqual(comparison[key]["actual"], actual)
+                    self.assertEqual(
+                        comparison[key]["difference"],
+                        round(actual - round(target, 1), 1),
+                    )
+
+        self.assertGreater(above["target_comparison"]["calories"]["difference"], 0)
+        self.assertGreater(above["target_comparison"]["protein"]["difference"], 0)
+        self.assertLess(below["target_comparison"]["calories"]["difference"], 0)
+        self.assertLess(below["target_comparison"]["protein"]["difference"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
