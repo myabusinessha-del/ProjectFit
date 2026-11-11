@@ -30,6 +30,8 @@ VEGETARIAN_MEALS = {
 
 
 def _validated_number(value, label, minimum=None, strict_minimum=False):
+    if isinstance(value, bool):
+        raise ValueError(f'{label} must be a valid number.')
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -110,6 +112,8 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     if days < 1 or days > 14:
         raise ValueError('Days must be between 1 and 14.')
 
+    if isinstance(budget, bool):
+        raise ValueError('Budget must be a non-negative number.')
     try:
         budget = float(budget)
     except (TypeError, ValueError):
