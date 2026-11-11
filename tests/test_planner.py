@@ -122,6 +122,16 @@ class PlannerInputValidationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Protein target"):
                     plan_for(2200, protein, 500)
 
+    def test_rejects_boolean_calorie_protein_and_budget_inputs(self):
+        for calories, protein, budget in (
+            (True, 100, 500),
+            (2200, True, 500),
+            (2200, 100, True),
+        ):
+            with self.subTest(calories=calories, protein=protein, budget=budget):
+                with self.assertRaises(ValueError):
+                    plan_for(calories, protein, budget)
+
 
 class NutritionTargetValidationTests(unittest.TestCase):
     def test_rejects_invalid_age_height_and_weight(self):
@@ -133,7 +143,7 @@ class NutritionTargetValidationTests(unittest.TestCase):
             "activity": "moderate",
             "goal": "maintain",
         }
-        invalid_values = (0, -1, float("inf"), float("nan"), "invalid", None)
+        invalid_values = (0, -1, True, False, float("inf"), float("nan"), "invalid", None)
         expected_labels = {"age": "Age", "height_cm": "Height", "weight_kg": "Weight"}
         for field in ("age", "height_cm", "weight_kg"):
             for value in invalid_values:
