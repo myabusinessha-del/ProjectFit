@@ -1,4 +1,13 @@
+import json
 import logging
+
+
+def parse_json_object(raw_body):
+    """Parse an API body and reject valid JSON values that are not objects."""
+    payload = json.loads(raw_body or b"{}")
+    if not isinstance(payload, dict):
+        raise ValueError("Request body must be a JSON object.")
+    return payload
 
 
 def respond_with_internal_error(json_response, error):
