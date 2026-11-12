@@ -1,6 +1,11 @@
 import unittest
 
-from planner import (\n    calculate_targets,\n    plan_for,\n    validate_macro_target_payload,\n    validate_plan_request_payload,\n)
+from planner import (
+    calculate_targets,
+    plan_for,
+    validate_macro_target_payload,
+    validate_plan_request_payload,
+)
 
 
 
