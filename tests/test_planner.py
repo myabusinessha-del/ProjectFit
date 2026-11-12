@@ -1,6 +1,46 @@
 import unittest
 
-from planner import calculate_targets, plan_for
+from planner import (
+    calculate_targets,
+    plan_for,
+    validate_macro_target_payload,
+    validate_plan_request_payload,
+)
+
+
+
+class PlannerApiPayloadValidationTests(unittest.TestCase):
+    def test_planner_api_rejects_boolean_numeric_values_before_coercion(self):
+        for field in ("calories", "protein", "budget"):
+            with self.subTest(field=field):
+                with self.assertRaisesRegex(ValueError, "valid number"):
+                    validate_plan_request_payload({field: True})
+
+    def test_planner_api_rejects_fractional_boolean_and_out_of_range_days(self):
+        for days in (True, False, 0, 1.5, 15, float("inf"), float("nan"), "seven"):
+            with self.subTest(days=days):
+                with self.assertRaises(ValueError):
+                    validate_plan_request_payload({"days": days})
+
+    def test_planner_api_accepts_valid_values_and_omitted_defaults(self):
+        validate_plan_request_payload({
+            "calories": 2200,
+            "protein": 150,
+            "budget": 0,
+            "days": "7",
+        })
+        validate_plan_request_payload({})
+
+    def test_macro_api_rejects_invalid_age_height_and_weight_before_coercion(self):
+        for field in ("age", "height_cm", "weight_kg"):
+            for value in (True, False, 0, -1, float("inf"), float("nan"), "invalid"):
+                with self.subTest(field=field, value=value):
+                    with self.assertRaises(ValueError):
+                        validate_macro_target_payload({field: value})
+
+    def test_macro_api_allows_omitted_profile_values(self):
+        validate_macro_target_payload({})
+        validate_macro_target_payload({"age": None, "height_cm": "", "weight_kg": None})
 
 
 class MealCountTests(unittest.TestCase):

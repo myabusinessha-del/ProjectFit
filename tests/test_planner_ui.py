@@ -7,6 +7,20 @@ class PlannerUiTests(unittest.TestCase):
     def setUpClass(cls):
         repository_root = Path(__file__).resolve().parents[1]
         cls.html = (repository_root / "index.html").read_text(encoding="utf-8")
+        cls.server = (repository_root / "server.py").read_text(encoding="utf-8")
+
+
+    def test_api_validates_raw_planner_and_macro_inputs_before_service_coercion(self):
+        self.assertIn("validate_plan_request_payload(p)", self.server)
+        self.assertIn("validate_macro_target_payload(p)", self.server)
+        self.assertLess(
+            self.server.index("validate_plan_request_payload(p)"),
+            self.server.index("routes[path](uid,p)"),
+        )
+        self.assertLess(
+            self.server.index("validate_macro_target_payload(p)"),
+            self.server.index("routes[path](uid,p)"),
+        )
 
     def test_vegetarian_meal_option_is_visible(self):
         self.assertIn('id="plvegetarian"', self.html)
