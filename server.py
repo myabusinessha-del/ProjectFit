@@ -8,7 +8,7 @@ from auth_service import AuthService
 from cloud_service import CloudAccountService
 from health import health_status
 from planner import validate_plan_request_payload, validate_macro_target_payload
-from api_errors import respond_with_internal_error
+from api_errors import parse_json_object, respond_with_internal_error
 try:
     from projectfit_config import SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
     os.environ.setdefault('SUPABASE_URL', SUPABASE_URL); os.environ.setdefault('SUPABASE_PUBLISHABLE_KEY', SUPABASE_PUBLISHABLE_KEY)
@@ -23,7 +23,7 @@ class Handler(BaseHTTPRequestHandler):
         for k,v in (headers or {}).items(): self.send_header(k,v)
         self.end_headers(); self.wfile.write(data)
     def do_OPTIONS(self): self.json({},204)
-    def body(self): return json.loads(self.rfile.read(int(self.headers.get('Content-Length','0')) or 0) or b'{}')
+    def body(self): return parse_json_object(self.rfile.read(int(self.headers.get('Content-Length','0')) or 0))
     def token(self):
         m=re.search(r'(?:^|; )pf_session=([^;]+)',self.headers.get('Cookie','')); return m.group(1) if m else None
     def cloud_token(self):
