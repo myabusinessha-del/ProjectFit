@@ -45,6 +45,45 @@ def _validated_number(value, label, minimum=None, strict_minimum=False):
             raise ValueError(f'{label} must be {qualifier} {minimum}.')
     return number
 
+def _validated_days(value):
+    if isinstance(value, bool):
+        raise ValueError('Days must be a whole number between 1 and 14.')
+    try:
+        days_number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError('Days must be a whole number between 1 and 14.')
+    if not isfinite(days_number) or not days_number.is_integer():
+        raise ValueError('Days must be a whole number between 1 and 14.')
+    days = int(days_number)
+    if days < 1 or days > 14:
+        raise ValueError('Days must be between 1 and 14.')
+    return days
+
+
+def validate_plan_request_payload(payload):
+    """Validate raw API values before the service layer coerces them."""
+    for field, label in (
+        ('calories', 'Calorie target'),
+        ('protein', 'Protein target'),
+        ('budget', 'Budget'),
+    ):
+        if isinstance(payload.get(field), bool):
+            raise ValueError(f'{label} must be a valid number.')
+
+    if 'days' in payload and payload['days'] not in (None, ''):
+        _validated_days(payload['days'])
+
+
+def validate_macro_target_payload(payload):
+    """Validate optional demographic numbers before service-layer conversion."""
+    for field, label in (
+        ('age', 'Age'),
+        ('height_cm', 'Height'),
+        ('weight_kg', 'Weight'),
+    ):
+        if field in payload and payload[field] not in (None, ''):
+            _validated_number(payload[field], label, 0, strict_minimum=True)
+
 
 def calc_food(items):
     out={k:0.0 for k in ('calories','protein','carbs','fat','fibre')}
@@ -100,17 +139,7 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     calories = _validated_number(calories, 'Calorie target', 0, strict_minimum=True)
     protein = _validated_number(protein, 'Protein target', 0)
 
-    if isinstance(days, bool):
-        raise ValueError('Days must be a whole number between 1 and 14.')
-    try:
-        days_number = float(days)
-    except (TypeError, ValueError):
-        raise ValueError('Days must be a whole number between 1 and 14.')
-    if not isfinite(days_number) or not days_number.is_integer():
-        raise ValueError('Days must be a whole number between 1 and 14.')
-    days = int(days_number)
-    if days < 1 or days > 14:
-        raise ValueError('Days must be between 1 and 14.')
+    days = _validated_days(days)
 
     if isinstance(budget, bool):
         raise ValueError('Budget must be a non-negative number.')
