@@ -7,6 +7,7 @@ from service import ProjectFit
 from auth_service import AuthService
 from cloud_service import CloudAccountService
 from health import health_status
+from planner import validate_plan_request_payload, validate_macro_target_payload
 from api_errors import respond_with_internal_error
 try:
     from projectfit_config import SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
@@ -104,6 +105,8 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/api/auth/migrate-demo': return self.json(app.migrate_demo(uid))
             if path=='/api/auth/delete': auth.delete_user(uid); return self.json({'ok':True},200,{'Set-Cookie':cookie_header('pf_session','',expired=True)})
             routes={'/api/workouts/log':app.log_workout,'/api/nutrition':app.add_nutrition,'/api/nutrition/delete':app.delete_nutrition,'/api/measurements':app.add_measurement,'/api/activity':app.add_activity,'/api/activity/delete':app.delete_activity,'/api/checkins':app.checkin,'/api/profile':app.update_profile,'/api/privacy':app.update_privacy,'/api/planner':app.nutrition_plan,'/api/macro-targets':app.macro_targets}
+            if path == '/api/planner': validate_plan_request_payload(p)
+            elif path == '/api/macro-targets': validate_macro_target_payload(p)
             if path in routes:return self.json(routes[path](uid,p))
             return self.json({'error':'Not found'},404)
         except PermissionError as e:return self.json({'error':str(e)},401)
