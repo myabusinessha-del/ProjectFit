@@ -12,6 +12,11 @@ CATALOG = [
     {'id':'peanut','name':'Peanut butter','unit_g':800,'price':55,'kcal':588,'protein':25,'carbs':20,'fat':50,'fibre':6,'stores':['Checkers','Pick n Pay','Woolworths']},
     {'id':'milk','name':'Low-fat milk','unit_g':2000,'price':40,'kcal':46,'protein':3.4,'carbs':4.8,'fat':1.5,'fibre':0,'stores':['Checkers','Pick n Pay','Woolworths']},
     {'id':'whey','name':'Whey protein','unit_g':1000,'price':450,'kcal':400,'protein':75,'carbs':10,'fat':7,'fibre':0,'stores':['Checkers','Pick n Pay','Woolworths']},
+    {'id':'soymilk','name':'Soy milk','unit_g':1000,'price':25,'kcal':33,'protein':3.3,'carbs':0.7,'fat':1.8,'fibre':0.6,'stores':['Checkers','Pick n Pay','Woolworths']},
+    {'id':'tofu','name':'Firm tofu','unit_g':500,'price':55,'kcal':144,'protein':15.7,'carbs':3.5,'fat':8.7,'fibre':1.2,'stores':['Checkers','Pick n Pay','Woolworths']},
+    {'id':'lentils','name':'Dry lentils','unit_g':500,'price':35,'kcal':352,'protein':24.6,'carbs':63.1,'fat':1.1,'fibre':10.7,'stores':['Checkers','Pick n Pay','Woolworths']},
+    {'id':'chickpeas','name':'Dry chickpeas','unit_g':500,'price':32,'kcal':364,'protein':19.3,'carbs':60.7,'fat':6,'fibre':17.4,'stores':['Checkers','Pick n Pay','Woolworths']},
+    {'id':'pea_protein','name':'Pea protein','unit_g':1000,'price':320,'kcal':380,'protein':80,'carbs':5,'fat':6,'fibre':2,'stores':['Checkers','Pick n Pay','Woolworths']},
 ]
 MEALS = [
     ('Breakfast','Protein oats', [('oats',70),('milk',250),('banana',100),('peanut',10)]),
@@ -26,6 +31,12 @@ MEALS = [
 VEGETARIAN_MEALS = {
     'lunch': ('Lunch', 'Egg rice bowl', [('eggs',150),('rice',100),('frozenveg',200)]),
     'dinner': ('Dinner', 'Egg and potato bowl', [('eggs',150),('potato',300),('frozenveg',200)]),
+}
+VEGAN_MEALS = {
+    'breakfast': ('Breakfast', 'Vegan protein oats', [('oats',70),('soymilk',250),('banana',100),('peanut',10)]),
+    'lunch': ('Lunch', 'Lentil rice bowl', [('lentils',70),('rice',80),('frozenveg',200)]),
+    'dinner': ('Dinner', 'Tofu potato bowl', [('tofu',150),('potato',300),('frozenveg',200)]),
+    'snack': ('Snack', 'Soy banana smoothie', [('soymilk',200),('banana',100),('peanut',15)]),
 }
 
 
@@ -72,6 +83,8 @@ def validate_plan_request_payload(payload):
 
     if 'days' in payload and payload['days'] not in (None, ''):
         _validated_days(payload['days'])
+    if 'vegan' in payload and not isinstance(payload['vegan'], bool):
+        raise ValueError('Vegan selection must be true or false.')
 
 
 def validate_macro_target_payload(payload):
@@ -135,7 +148,7 @@ def calculate_targets(age,height_cm,weight_kg,sex,activity,goal):
     return {'bmr':round(bmr),'tdee':round(tdee),'calories':calories,'protein':protein,'carbs':carbs,'fat':fat,'fibre':30,'method':'Mifflin-St Jeor + activity/goal adjustment; planning estimate'}
 
 
-def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=False, use_whey=True):
+def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=False, use_whey=True, vegan=False):
     calories = _validated_number(calories, 'Calorie target', 0, strict_minimum=True)
     protein = _validated_number(protein, 'Protein target', 0)
 
@@ -151,7 +164,8 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         raise ValueError('Budget must be a non-negative number.')
 
     choices={'breakfast':MEALS[0] if use_whey else MEALS[1],'lunch':MEALS[2],'dinner':MEALS[4],'snack':MEALS[6] if use_whey else MEALS[7]}
-    if vegetarian: choices.update(VEGETARIAN_MEALS)
+    if vegan: choices.update(VEGAN_MEALS)
+    elif vegetarian: choices.update(VEGETARIAN_MEALS)
     try:
         meals_per_day = int(meals_per_day)
     except (TypeError, ValueError):
@@ -173,12 +187,15 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         breakfast['items'].extend(snack['items'])
         base = [breakfast, lunch, dinner]
     elif meals_per_day == 5:
-        if use_whey:
+        if vegan and use_whey:
+            snack_one = {'meal': 'Snack', 'name': 'Pea protein shake', 'items': [('pea_protein', 30), ('soymilk', 200)]}
+        elif vegan:
+            snack_one = {'meal': 'Snack', 'name': 'Roasted chickpea snack', 'items': [('chickpeas', 40)]}
+        elif use_whey:
             snack_one = {'meal': 'Snack', 'name': 'Whey shake', 'items': [('whey', 35), ('milk', 200)]}
-            snack_two = {'meal': 'Snack', 'name': 'Banana snack', 'items': [('banana', 100)]}
         else:
             snack_one = {'meal': 'Snack', 'name': 'Egg and peanut snack', 'items': [('eggs', 100), ('peanut', 15)]}
-            snack_two = {'meal': 'Snack', 'name': 'Banana snack', 'items': [('banana', 100)]}
+        snack_two = {'meal': 'Snack', 'name': 'Banana snack', 'items': [('banana', 100)]}
         base = [breakfast, lunch, snack_one, snack_two, dinner]
     else:
         base = [breakfast, lunch, snack, dinner]
@@ -186,7 +203,9 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     protein_adjustment_meal = base[0] if meals_per_day == 3 else base[2]
     macros=calc_food([(i,g) for m in base for i,g in m['items']])
     if macros['protein'] < protein:
-        if vegetarian:
+        if vegan:
+            protein_food, protein_per_gram, adjustment_meal = 'tofu', 0.157, base[-1]
+        elif vegetarian:
             protein_food, protein_per_gram, adjustment_meal = 'eggs', 0.126, base[-1]
         else:
             protein_food, protein_per_gram, adjustment_meal = 'chicken', 0.225, base[1]
@@ -194,7 +213,12 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         adjustment_meal['items'].append((protein_food,min(150,extra)))
         macros=calc_food([(i,g) for m in base for i,g in m['items']])
     if macros['protein'] < protein and use_whey:
-        extra=max(0,(protein-macros['protein'])/0.75); protein_adjustment_meal['items'].append(('whey',min(35,extra))); macros=calc_food([(i,g) for m in base for i,g in m['items']])
+        powder = 'pea_protein' if vegan else 'whey'
+        protein_per_gram = 0.8 if vegan else 0.75
+        maximum_grams = 60 if vegan else 35
+        extra=max(0,(protein-macros['protein'])/protein_per_gram)
+        protein_adjustment_meal['items'].append((powder,min(maximum_grams,extra)))
+        macros=calc_food([(i,g) for m in base for i,g in m['items']])
     remaining=max(0,calories-macros['calories'])
     if remaining:
         base[1]['items'].append(('rice',min(180,remaining/3.6))); macros=calc_food([(i,g) for m in base for i,g in m['items']]); remaining=max(0,calories-macros['calories'])
