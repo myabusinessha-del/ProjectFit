@@ -1,3 +1,5 @@
+import base64
+import gzip
 import unittest
 from pathlib import Path
 
@@ -8,6 +10,8 @@ class PlannerUiTests(unittest.TestCase):
         repository_root = Path(__file__).resolve().parents[1]
         cls.html = (repository_root / "index.html").read_text(encoding="utf-8")
         cls.server = (repository_root / "server.py").read_text(encoding="utf-8")
+        encoded_service = (repository_root / "service_min.py.gz.b64").read_text(encoding="utf-8")
+        cls.service = gzip.decompress(base64.b64decode(encoded_service)).decode("utf-8")
 
 
     def test_api_validates_raw_planner_and_macro_inputs_before_service_coercion(self):
@@ -28,6 +32,17 @@ class PlannerUiTests(unittest.TestCase):
 
     def test_planner_request_sends_vegetarian_selection(self):
         self.assertIn('vegetarian:$("plvegetarian").checked', self.html)
+
+    def test_vegan_meal_option_and_plant_protein_label_are_visible(self):
+        self.assertIn('id="plvegan"', self.html)
+        self.assertIn("Vegan meals (overrides vegetarian)", self.html)
+        self.assertIn("pea for vegan plans", self.html)
+
+    def test_planner_request_sends_vegan_selection(self):
+        self.assertIn("vegan:vegan", self.html)
+
+    def test_service_forwards_vegan_selection_to_planner(self):
+        self.assertIn("bool(p.get('vegan'))", self.service)
 
 
     def test_planner_uses_profile_based_macro_targets_before_generating_meals(self):
