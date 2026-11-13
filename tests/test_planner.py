@@ -31,6 +31,12 @@ class PlannerApiPayloadValidationTests(unittest.TestCase):
         })
         validate_plan_request_payload({})
 
+    def test_planner_api_rejects_non_boolean_vegan_selection(self):
+        for value in ("true", 1, None):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "Vegan selection"):
+                    validate_plan_request_payload({"vegan": value})
+
     def test_macro_api_rejects_invalid_age_height_and_weight_before_coercion(self):
         for field in ("age", "height_cm", "weight_kg"):
             for value in (True, False, 0, -1, float("inf"), float("nan"), "invalid"):
@@ -116,6 +122,47 @@ class MealCountTests(unittest.TestCase):
                     self.assertNotIn("Lean beef mince", foods)
                     self.assertNotIn("Tuna", foods)
                     self.assertIn("Eggs", foods)
+
+
+class VeganMealPlanTests(unittest.TestCase):
+    def test_vegan_plans_exclude_animal_derived_foods_for_all_meal_counts(self):
+        animal_foods = {
+            "Eggs", "Chicken breast", "Lean beef mince", "Tuna",
+            "Low-fat milk", "Whey protein",
+        }
+        for count in (3, 4, 5):
+            for use_powder in (False, True):
+                with self.subTest(count=count, use_powder=use_powder):
+                    result = plan_for(
+                        2400, 150, 1000, meals_per_day=count, days=7,
+                        vegetarian=True, use_whey=use_powder, vegan=True,
+                    )
+                    foods = {
+                        item["food"]
+                        for meal in result["daily"]
+                        for item in meal["items"]
+                    }
+                    self.assertFalse(animal_foods.intersection(foods))
+                    self.assertIn("Tofu", foods)
+                    self.assertIn("Lentils", foods)
+                    self.assertIn("Soy milk", foods)
+                    self.assertEqual(len(result["daily"]), count)
+                    if use_powder:
+                        self.assertIn("Pea protein", foods)
+
+    def test_vegan_five_meal_plan_uses_chickpeas_when_powder_is_disabled(self):
+        result = plan_for(
+            2200, 100, 500, meals_per_day=5, days=5,
+            use_whey=False, vegan=True,
+        )
+        self.assertEqual(result["daily"][2]["name"], "Roasted chickpea snack")
+        foods = {
+            item["food"]
+            for meal in result["daily"]
+            for item in meal["items"]
+        }
+        self.assertIn("Dry chickpeas", foods)
+        self.assertNotIn("Whey protein", foods)
 
 
 class PlannerInputValidationTests(unittest.TestCase):
