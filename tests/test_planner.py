@@ -143,7 +143,7 @@ class VeganMealPlanTests(unittest.TestCase):
                         for item in meal["items"]
                     }
                     self.assertFalse(animal_foods.intersection(foods))
-                    self.assertIn("Tofu", foods)
+                    self.assertIn("Firm tofu", foods)
                     self.assertIn("Lentils", foods)
                     self.assertIn("Soy milk", foods)
                     self.assertEqual(len(result["daily"]), count)
