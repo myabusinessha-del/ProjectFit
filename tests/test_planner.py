@@ -144,7 +144,7 @@ class VeganMealPlanTests(unittest.TestCase):
                     }
                     self.assertFalse(animal_foods.intersection(foods))
                     self.assertIn("Firm tofu", foods)
-                    self.assertIn("Lentils", foods)
+                    self.assertIn("Dry lentils", foods)
                     self.assertIn("Soy milk", foods)
                     self.assertEqual(len(result["daily"]), count)
                     if use_powder:
