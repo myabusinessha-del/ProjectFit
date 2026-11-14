@@ -72,5 +72,14 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("saved.protein_target", self.html)
 
 
+    def test_planner_displays_daily_carbohydrate_fat_and_fibre_totals(self):
+        for label in ("Daily carbohydrates", "Daily fat", "Daily fibre"):
+            with self.subTest(label=label):
+                self.assertIn(label, self.html)
+        for field in ("daily.carbs", "daily.fat", "daily.fibre"):
+            with self.subTest(field=field):
+                self.assertIn(field, self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
