@@ -41,7 +41,9 @@ class CloudAccountService:
         if not cookie:return None
         return self.db.q('SELECT * FROM cloud_sessions WHERE token_hash=?',(self._hash(cookie),)).fetchone()
     def user_id(self,cookie):
-        row=self.token_from_cookie(cookie); return row['user_id'] if row else None
+        row=self.token_from_cookie(cookie)
+        if not row or not self.access(cookie): return None
+        return row['user_id']
     def access(self,cookie):
         row=self.token_from_cookie(cookie)
         if not row:return None
@@ -69,13 +71,22 @@ class CloudAccountService:
         row=self.token_from_cookie(cookie); uid=row['user_id'] if row else None; token=self.access(cookie)
         if not uid or not token: raise PermissionError('Cloud session expired. Please log in again.')
         remote=self.cloud.pull(uid,token); local=table_rows(self.db,uid); local_ids={r['id'] for r in local}
+        remote_by_id={r['id']:r for r in remote}
         for rr in remote:
             if rr['id'] not in local_ids and self.db.q('SELECT 1 FROM cloud_record_state WHERE record_id=?',(rr['id'],)).fetchone():
                 try:self.cloud._req('/rest/v1/pf_records?id=eq.'+rr['id']+'&user_id=eq.'+uid,'DELETE',token=token,prefer='return=minimal'); self.db.q('DELETE FROM cloud_record_state WHERE record_id=?',(rr['id'],))
                 except Exception: pass
         accepted=[]; conflicts=[]
         for rec in local:
-            st=self.db.q('SELECT server_version FROM cloud_record_state WHERE record_id=?',(rec['id'],)).fetchone(); base=int(st['server_version']) if st else 0
+            st=self.db.q('SELECT server_version FROM cloud_record_state WHERE record_id=?',(rec['id'],)).fetchone()
+            remote_record=remote_by_id.get(rec['id'])
+            # On a fresh device there is no base version. If the same record
+            # already exists remotely, adopt it rather than uploading local
+            # bootstrap defaults over the user's saved cloud data.
+            if remote_record is not None and st is None:
+                self.db.q('INSERT OR REPLACE INTO cloud_record_state VALUES(?,?,?)',(rec['id'],int(remote_record['version']),self._now()))
+                continue
+            base=int(st['server_version']) if st else 0
             a,c=self.cloud.upsert(uid,token,rec,base)
             if a: accepted.append(a); self.db.q('INSERT OR REPLACE INTO cloud_record_state VALUES(?,?,?)',(rec['id'],a['version'],self._now()))
             elif c: conflicts.append(c)
@@ -94,7 +105,10 @@ class CloudAccountService:
     def delete_account(self,cookie):
         row=self.token_from_cookie(cookie); uid=row['user_id'] if row else None; token=self.access(cookie)
         if not uid or not token: raise PermissionError('Cloud session expired.')
-        self.cloud.delete_all(uid,token); self.db.q('DELETE FROM users WHERE id=?',(uid,)); self.db.commit(); self.logout(cookie); return {'ok':True}
+        # Do not partially delete application data: complete deletion also requires
+        # trusted-server removal of the Supabase Auth user and related profile/session
+        # rows. This service currently has no configured admin deletion capability.
+        raise ValueError('Account deletion is temporarily unavailable because complete Supabase account cleanup is not configured. No account data has been changed. Please contact support.')
     def export_cloud(self,cookie):
         row=self.token_from_cookie(cookie); uid=row['user_id'] if row else None; token=self.access(cookie)
         if not uid or not token: raise PermissionError('Cloud session expired.')
