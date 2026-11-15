@@ -83,8 +83,13 @@ def validate_plan_request_payload(payload):
 
     if 'days' in payload and payload['days'] not in (None, ''):
         _validated_days(payload['days'])
-    if 'vegan' in payload and not isinstance(payload['vegan'], bool):
-        raise ValueError('Vegan selection must be true or false.')
+    for field, label in (
+        ('vegetarian', 'Vegetarian selection'),
+        ('vegan', 'Vegan selection'),
+        ('use_whey', 'Protein powder selection'),
+    ):
+        if field in payload and not isinstance(payload[field], bool):
+            raise ValueError(f'{label} must be true or false.')
 
 
 def validate_macro_target_payload(payload):
