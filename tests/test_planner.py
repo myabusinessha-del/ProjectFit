@@ -37,6 +37,27 @@ class PlannerApiPayloadValidationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Vegan selection"):
                     validate_plan_request_payload({"vegan": value})
 
+    def test_planner_api_rejects_non_boolean_vegetarian_and_protein_powder_selections(self):
+        for field, label in (
+            ("vegetarian", "Vegetarian selection"),
+            ("use_whey", "Protein powder selection"),
+        ):
+            for value in ("true", "false", 0, 1, None):
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(ValueError, label):
+                        validate_plan_request_payload({field: value})
+
+    def test_planner_api_accepts_boolean_dietary_and_protein_powder_selections(self):
+        for vegetarian in (True, False):
+            for vegan in (True, False):
+                for use_whey in (True, False):
+                    with self.subTest(vegetarian=vegetarian, vegan=vegan, use_whey=use_whey):
+                        validate_plan_request_payload({
+                            "vegetarian": vegetarian,
+                            "vegan": vegan,
+                            "use_whey": use_whey,
+                        })
+
     def test_macro_api_rejects_invalid_age_height_and_weight_before_coercion(self):
         for field in ("age", "height_cm", "weight_kg"):
             for value in (True, False, 0, -1, float("inf"), float("nan"), "invalid"):
