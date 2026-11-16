@@ -71,6 +71,20 @@ def _validated_days(value):
     return days
 
 
+def _validated_meals_per_day(value):
+    """Accept only the three meal counts exposed by the planner UI."""
+    message = 'Meals per day must be 3, 4 or 5.'
+    if isinstance(value, bool):
+        raise ValueError(message)
+    try:
+        count = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(message)
+    if not isfinite(count) or not count.is_integer() or int(count) not in (3, 4, 5):
+        raise ValueError(message)
+    return int(count)
+
+
 def validate_plan_request_payload(payload):
     """Validate raw API values before the service layer coerces them."""
     for field, label in (
@@ -83,6 +97,8 @@ def validate_plan_request_payload(payload):
 
     if 'days' in payload and payload['days'] not in (None, ''):
         _validated_days(payload['days'])
+    if 'meals_per_day' in payload and payload['meals_per_day'] not in (None, ''):
+        _validated_meals_per_day(payload['meals_per_day'])
     for field, label in (
         ('vegetarian', 'Vegetarian selection'),
         ('vegan', 'Vegan selection'),
