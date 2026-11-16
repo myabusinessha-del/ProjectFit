@@ -31,6 +31,20 @@ class PlannerApiPayloadValidationTests(unittest.TestCase):
         })
         validate_plan_request_payload({})
 
+    def test_planner_api_rejects_invalid_meal_counts_before_service_fallback(self):
+        for value in (True, False, 2, 6, 3.5, float('inf'), float('nan'), 'not-a-number', '2', '6'):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, 'Meals per day'):
+                    validate_plan_request_payload({'meals_per_day': value})
+
+    def test_planner_api_accepts_supported_meal_counts_and_omitted_defaults(self):
+        for value in (3, 4, 5, 3.0, '4', '5'):
+            with self.subTest(value=value):
+                validate_plan_request_payload({'meals_per_day': value})
+        validate_plan_request_payload({})
+        validate_plan_request_payload({'meals_per_day': None})
+        validate_plan_request_payload({'meals_per_day': ''})
+
     def test_planner_api_rejects_non_boolean_vegan_selection(self):
         for value in ("true", 1, None):
             with self.subTest(value=value):
