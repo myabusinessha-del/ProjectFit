@@ -81,5 +81,14 @@ class PlannerUiTests(unittest.TestCase):
                 self.assertIn(field, self.html)
 
 
+    def test_planner_displays_exact_budget_gap_or_remaining_amount(self):
+        self.assertIn("function budgetDelta()", self.html)
+        self.assertIn("budget_for_plan==null?d.budget:d.budget_for_plan", self.html)
+        self.assertIn("Budget comparison unavailable", self.html)
+        self.assertIn("over budget", self.html)
+        self.assertIn("remaining", self.html)
+        self.assertIn("Exactly on budget", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
