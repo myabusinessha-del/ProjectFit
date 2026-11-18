@@ -90,5 +90,15 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("Exactly on budget", self.html)
 
 
+    def test_planner_displays_pack_purchase_cost_per_day_and_planned_meal(self):
+        for label in ("Shopping spend per day", "Shopping spend per planned meal"):
+            with self.subTest(label=label):
+                self.assertIn(label, self.html)
+        self.assertIn("estimatedCost/planDays", self.html)
+        self.assertIn("estimatedCost/(planDays*planMeals)", self.html)
+        self.assertIn("costBreakdownValid", self.html)
+        self.assertIn("not the cost of ingredients consumed only", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
