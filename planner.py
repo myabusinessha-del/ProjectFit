@@ -103,6 +103,7 @@ def validate_plan_request_payload(payload):
         ('vegetarian', 'Vegetarian selection'),
         ('vegan', 'Vegan selection'),
         ('use_whey', 'Protein powder selection'),
+        ('optimize_budget', 'Budget optimisation selection'),
     ):
         if field in payload and not isinstance(payload[field], bool):
             raise ValueError(f'{label} must be true or false.')

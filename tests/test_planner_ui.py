@@ -100,5 +100,17 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("not the cost of ingredients consumed only", self.html)
 
 
+    def test_budget_swap_is_opt_in_and_wired_through_the_api(self):
+        self.assertIn("Try lower-cost protein swap", self.html)
+        self.assertIn("optimize_budget:optimizeBudget===true", self.html)
+        self.assertIn("optimize_budget", self.server)
+        self.assertIn("optimize_budget') is True", self.server)
+        self.assertIn("optimize_budget', 'Budget optimisation selection", (Path(__file__).resolve().parents[1] / "planner.py").read_text(encoding="utf-8"))
+
+    def test_budget_swap_result_explains_savings_and_allergen_check(self):
+        self.assertIn("budgetOpt.estimated_savings", self.html)
+        self.assertIn("allergen information before use", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
