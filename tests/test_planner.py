@@ -351,5 +351,18 @@ class PlannerTargetComparisonTests(unittest.TestCase):
         self.assertLess(below["target_comparison"]["protein"]["difference"], 0)
 
 
+class BudgetOptimizationPayloadValidationTests(unittest.TestCase):
+    def test_planner_api_requires_boolean_budget_optimization_flag(self):
+        for value in ("true", "false", 0, 1, None):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "Budget optimisation selection"):
+                    validate_plan_request_payload({"optimize_budget": value})
+
+    def test_planner_api_accepts_boolean_budget_optimization_flag(self):
+        validate_plan_request_payload({"optimize_budget": True})
+        validate_plan_request_payload({"optimize_budget": False})
+        validate_plan_request_payload({})
+
+
 if __name__ == "__main__":
     unittest.main()
