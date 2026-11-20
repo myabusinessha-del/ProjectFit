@@ -19,6 +19,14 @@ class BudgetOptimizerTests(unittest.TestCase):
                     optimized["budget_optimization"]["estimated_savings"], 130.0
                 )
                 self.assertLess(optimized["estimated_total"], original["estimated_total"])
+                self.assertEqual(
+                    optimized["budget_optimization"]["original_estimated_total"],
+                    original["estimated_total"],
+                )
+                self.assertEqual(
+                    optimized["budget_optimization"]["optimized_estimated_total"],
+                    optimized["estimated_total"],
+                )
                 self.assertLessEqual(
                     abs(
                         optimized["daily_totals"]["calories"]
