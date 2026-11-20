@@ -112,5 +112,12 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("allergen information before use", self.html)
 
 
+    def test_budget_swap_shows_before_and_after_full_pack_costs(self):
+        self.assertIn("budgetOpt.original_estimated_total", self.html)
+        self.assertIn("budgetOpt.optimized_estimated_total", self.html)
+        self.assertIn("Before R", self.html)
+        self.assertIn("after R", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
