@@ -1,6 +1,7 @@
 import unittest
 
 from planner import (
+    apply_ingredient_exclusions,
     calculate_targets,
     plan_for,
     validate_macro_target_payload,
@@ -82,6 +83,18 @@ class PlannerApiPayloadValidationTests(unittest.TestCase):
     def test_macro_api_allows_omitted_profile_values(self):
         validate_macro_target_payload({})
         validate_macro_target_payload({"age": None, "height_cm": "", "weight_kg": None})
+
+
+    def test_planner_api_accepts_supported_ingredient_exclusions(self):
+        validate_plan_request_payload({
+            "excluded_allergens": ["peanut", "milk", "egg", "soy", "fish"]
+        })
+
+    def test_planner_api_rejects_malformed_or_unknown_ingredient_exclusions(self):
+        for value in ("peanut", None, {}, ["unknown"], ["peanut", True]):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "Ingredient exclusions"):
+                    validate_plan_request_payload({"excluded_allergens": value})
 
 
 class MealCountTests(unittest.TestCase):
@@ -362,6 +375,89 @@ class BudgetOptimizationPayloadValidationTests(unittest.TestCase):
         validate_plan_request_payload({"optimize_budget": True})
         validate_plan_request_payload({"optimize_budget": False})
         validate_plan_request_payload({})
+
+
+
+class IngredientExclusionTests(unittest.TestCase):
+    def test_peanut_exclusion_removes_catalogue_ingredient_and_recalculates_totals(self):
+        original = plan_for(2400, 180, 400, meals_per_day=4, days=7)
+        original_totals = dict(original["daily_totals"])
+        filtered = apply_ingredient_exclusions(original, ["peanut"])
+
+        foods = {
+            item["food"]
+            for meal in filtered["daily"]
+            for item in meal["items"]
+        }
+        shopping_foods = {item["food"] for item in filtered["shopping"]}
+        self.assertNotIn("Peanut butter", foods)
+        self.assertNotIn("Peanut butter", shopping_foods)
+        self.assertEqual(filtered["excluded_allergens"], ["peanut"])
+        self.assertEqual(
+            filtered["estimated_total"],
+            sum(item["estimated_cost"] for item in filtered["shopping"]),
+        )
+        for macro in ("calories", "protein", "carbs", "fat", "fibre"):
+            with self.subTest(macro=macro):
+                self.assertAlmostEqual(
+                    filtered["daily_totals"][macro],
+                    sum(meal[macro] for meal in filtered["daily"]),
+                    places=6,
+                )
+        self.assertEqual(original["daily_totals"], original_totals)
+        self.assertNotIn("excluded_allergens", original)
+
+    def test_milk_exclusion_removes_both_milk_and_whey(self):
+        original = plan_for(2400, 180, 400, use_whey=True)
+        filtered = apply_ingredient_exclusions(original, ["milk"])
+        foods = {
+            item["food"]
+            for meal in filtered["daily"]
+            for item in meal["items"]
+        }
+        self.assertNotIn("Low-fat milk", foods)
+        self.assertNotIn("Whey protein", foods)
+        self.assertNotIn("Low-fat milk", {item["food"] for item in filtered["shopping"]})
+        self.assertNotIn("Whey protein", {item["food"] for item in filtered["shopping"]})
+
+    def test_soy_exclusion_removes_soy_milk_and_tofu_from_vegan_plan(self):
+        original = plan_for(2400, 150, 1000, vegan=True)
+        filtered = apply_ingredient_exclusions(original, ["soy"])
+        foods = {
+            item["food"]
+            for meal in filtered["daily"]
+            for item in meal["items"]
+        }
+        self.assertNotIn("Soy milk", foods)
+        self.assertNotIn("Firm tofu", foods)
+        self.assertEqual(len(filtered["daily"]), len(original["daily"]))
+
+    def test_optimizer_does_not_reintroduce_dairy_after_milk_exclusion(self):
+        from budget_optimizer import optimize_budget_plan
+
+        original = plan_for(2400, 180, 400, use_whey=True)
+        filtered = apply_ingredient_exclusions(original, ["milk"])
+        optimized = optimize_budget_plan(filtered)
+        foods = {
+            item["food"]
+            for meal in optimized["daily"]
+            for item in meal["items"]
+        }
+        self.assertNotIn("Low-fat milk", foods)
+        self.assertNotIn("Whey protein", foods)
+        self.assertFalse(optimized["budget_optimization"]["applied"])
+
+    def test_unknown_catalogue_items_fail_closed(self):
+        from copy import deepcopy
+
+        plan = deepcopy(plan_for(2400, 180, 400))
+        plan["daily"][0]["items"][0]["food"] = "Unlisted ingredient"
+        with self.assertRaisesRegex(ValueError, "outside the current food catalogue"):
+            apply_ingredient_exclusions(plan, ["peanut"])
+
+    def test_unknown_allergen_selection_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "supported ingredient exclusions"):
+            apply_ingredient_exclusions(plan_for(2400, 180, 400), ["tree_nut"])
 
 
 if __name__ == "__main__":
