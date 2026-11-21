@@ -7,7 +7,7 @@ from service import ProjectFit
 from auth_service import AuthService
 from cloud_service import CloudAccountService
 from health import health_status
-from planner import validate_plan_request_payload, validate_macro_target_payload
+from planner import validate_plan_request_payload, validate_macro_target_payload, apply_ingredient_exclusions
 from budget_optimizer import optimize_budget_plan
 from api_errors import parse_json_object, respond_with_internal_error
 try:
@@ -109,6 +109,8 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/planner':
                 validate_plan_request_payload(p)
                 result = routes[path](uid, p)
+                if p.get('excluded_allergens'):
+                    result = apply_ingredient_exclusions(result, p['excluded_allergens'])
                 if p.get('optimize_budget') is True:
                     result = optimize_budget_plan(result)
                 return self.json(result)
