@@ -119,5 +119,22 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("after R", self.html)
 
 
+    def test_ingredient_exclusion_controls_are_wired_to_planner_api(self):
+        for element_id in (
+            "plallergenPeanut", "plallergenMilk", "plallergenEgg",
+            "plallergenSoy", "plallergenFish",
+        ):
+            with self.subTest(element_id=element_id):
+                self.assertIn('id="' + element_id + '"', self.html)
+        self.assertIn("excluded_allergens:excludedAllergens", self.html)
+        self.assertIn("apply_ingredient_exclusions(result", self.server)
+        self.assertLess(
+            self.server.index("apply_ingredient_exclusions(result"),
+            self.server.index("optimize_budget_plan(result)"),
+        )
+        self.assertIn("not an allergy safety guarantee", self.html)
+        self.assertIn("Verify product labels and cross-contact", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()

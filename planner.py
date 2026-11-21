@@ -1,3 +1,4 @@
+from copy import deepcopy
 from math import ceil, isfinite
 CATALOG = [
     {'id':'oats','name':'Oats','unit_g':1000,'price':45,'kcal':389,'protein':16.9,'carbs':66.3,'fat':6.9,'fibre':10.6,'stores':['Checkers','Pick n Pay','Woolworths']},
@@ -18,6 +19,19 @@ CATALOG = [
     {'id':'chickpeas','name':'Dry chickpeas','unit_g':500,'price':32,'kcal':364,'protein':19.3,'carbs':60.7,'fat':6,'fibre':17.4,'stores':['Checkers','Pick n Pay','Woolworths']},
     {'id':'pea_protein','name':'Pea protein','unit_g':1000,'price':320,'kcal':380,'protein':80,'carbs':5,'fat':6,'fibre':2,'stores':['Checkers','Pick n Pay','Woolworths']},
 ]
+
+# These are catalogue-level ingredient groups, not a guarantee against traces,
+# undeclared ingredients or supplier cross-contact.
+ALLERGEN_INGREDIENTS = {
+    'peanut': {'peanut'},
+    'milk': {'milk', 'whey'},
+    'egg': {'eggs'},
+    'soy': {'soymilk', 'tofu'},
+    'fish': {'tuna'},
+}
+CATALOG_BY_ID = {item['id']: item for item in CATALOG}
+CATALOG_BY_NAME = {item['name']: item for item in CATALOG}
+
 MEALS = [
     ('Breakfast','Protein oats', [('oats',70),('milk',250),('banana',100),('peanut',10)]),
     ('Breakfast','Egg oats', [('eggs',150),('oats',50),('banana',100)]),
@@ -107,6 +121,17 @@ def validate_plan_request_payload(payload):
     ):
         if field in payload and not isinstance(payload[field], bool):
             raise ValueError(f'{label} must be true or false.')
+
+
+    if 'excluded_allergens' in payload:
+        selected = payload['excluded_allergens']
+        if not isinstance(selected, list) or any(
+            not isinstance(value, str) or value not in ALLERGEN_INGREDIENTS
+            for value in selected
+        ):
+            raise ValueError(
+                'Ingredient exclusions must be a list containing only: peanut, milk, egg, soy or fish.'
+            )
 
 
 def validate_macro_target_payload(payload):
@@ -287,3 +312,156 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         'budget_status': 'WITHIN BUDGET' if total_cost <= budget_for_plan else 'OVER BUDGET',
         'catalogue_note': 'Weekly budget is prorated to the selected plan duration. Prices are planning estimates; verify current pack prices and availability in-store/online.',
     }
+
+
+def apply_ingredient_exclusions(plan, excluded_allergens):
+    """Remove selected catalogue ingredients and rebuild nutrition and pack costs.
+
+    This is an ingredient-list filter only. It cannot detect traces, undeclared
+    ingredients, supplier formulation changes or cross-contact.
+    """
+    if not isinstance(plan, dict):
+        raise ValueError('A generated meal plan is required.')
+    if not isinstance(excluded_allergens, list):
+        raise ValueError('Ingredient exclusions must be a list.')
+
+    selected = []
+    for allergen in excluded_allergens:
+        if not isinstance(allergen, str) or allergen not in ALLERGEN_INGREDIENTS:
+            raise ValueError(
+                'Choose supported ingredient exclusions: peanut, milk, egg, soy or fish.'
+            )
+        if allergen not in selected:
+            selected.append(allergen)
+
+    result = deepcopy(plan)
+    result['excluded_allergens'] = selected
+    if not selected:
+        return result
+
+    daily = plan.get('daily')
+    if not isinstance(daily, list) or not daily:
+        raise ValueError('Daily meal details are unavailable.')
+
+    excluded_ids = set()
+    for allergen in selected:
+        excluded_ids.update(ALLERGEN_INGREDIENTS[allergen])
+
+    rebuilt = []
+    removed = set()
+    macro_keys = ('calories', 'protein', 'carbs', 'fat', 'fibre')
+
+    for meal in daily:
+        if not isinstance(meal, dict) or not isinstance(meal.get('items'), list):
+            raise ValueError('A meal has an invalid ingredient list.')
+
+        pairs = []
+        displayed_items = []
+        for item in meal['items']:
+            if not isinstance(item, dict):
+                raise ValueError('An ingredient entry is invalid.')
+            catalogue_item = CATALOG_BY_NAME.get(item.get('food'))
+            if catalogue_item is None:
+                raise ValueError(
+                    'Cannot apply ingredient exclusions to an item outside the current food catalogue.'
+                )
+            grams = _validated_number(
+                item.get('grams'), f"{catalogue_item['name']} quantity", 0
+            )
+            if catalogue_item['id'] in excluded_ids:
+                removed.add(catalogue_item['name'])
+                continue
+            pairs.append((catalogue_item['id'], grams))
+            displayed_items.append({
+                'food': catalogue_item['name'],
+                'grams': round(grams, 0),
+            })
+
+        if not displayed_items:
+            meal_name = meal.get('name') or 'meal'
+            raise ValueError(
+                f"Excluding the selected ingredients leaves '{meal_name}' with no ingredients. Choose fewer exclusions."
+            )
+
+        rebuilt.append({
+            **meal,
+            'items': displayed_items,
+            **calc_food(pairs),
+        })
+
+    days = _validated_days(plan.get('days'))
+    daily_totals = {
+        key: sum(float(meal[key]) for meal in rebuilt)
+        for key in macro_keys
+    }
+
+    required_by_id = {}
+    for meal in rebuilt:
+        for item in meal['items']:
+            catalogue_item = CATALOG_BY_NAME[item['food']]
+            required_by_id[catalogue_item['id']] = (
+                required_by_id.get(catalogue_item['id'], 0)
+                + float(item['grams']) * days
+            )
+
+    shopping = []
+    for item_id, required_grams in required_by_id.items():
+        if required_grams <= 0:
+            continue
+        catalogue_item = CATALOG_BY_ID[item_id]
+        packs = ceil(required_grams / catalogue_item['unit_g'])
+        shopping.append({
+            'food': catalogue_item['name'],
+            'required_g': round(required_grams),
+            'pack_g': catalogue_item['unit_g'],
+            'packs': packs,
+            'price_per_pack': catalogue_item['price'],
+            'estimated_cost': round(packs * catalogue_item['price'], 2),
+            'stores': catalogue_item['stores'],
+        })
+
+    estimated_total = round(sum(item['estimated_cost'] for item in shopping), 2)
+    budget_limit = plan.get('budget_for_plan')
+    if budget_limit is None and plan.get('budget') is not None:
+        budget_limit = _validated_number(plan['budget'], 'Budget', 0) * days / 7
+
+    if budget_limit is not None:
+        budget_limit = _validated_number(budget_limit, 'Plan budget', 0)
+        result['budget_status'] = (
+            'WITHIN BUDGET' if estimated_total <= budget_limit else 'OVER BUDGET'
+        )
+    else:
+        result['budget_status'] = 'COMPARISON UNAVAILABLE'
+
+    targets = plan.get('targets')
+    target_comparison = {}
+    if isinstance(targets, dict):
+        for key in ('calories', 'protein'):
+            if key not in targets:
+                continue
+            target = _validated_number(targets[key], f'{key.title()} target', 0)
+            actual = round(daily_totals[key], 1)
+            target_comparison[key] = {
+                'target': round(target, 1),
+                'actual': actual,
+                'difference': round(actual - target, 1),
+            }
+
+    result.update({
+        'daily': rebuilt,
+        'daily_totals': daily_totals,
+        'target_comparison': target_comparison,
+        'shopping': shopping,
+        'estimated_total': estimated_total,
+        'days': days,
+        'excluded_allergens': selected,
+        'ingredient_exclusions': {
+            'selected': selected,
+            'removed': sorted(removed),
+            'note': (
+                'This filter removes listed catalogue ingredients only. Verify labels, '
+                'traces and supplier cross-contact before use.'
+            ),
+        },
+    })
+    return result
