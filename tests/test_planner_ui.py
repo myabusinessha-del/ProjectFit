@@ -136,5 +136,18 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("Verify product labels and cross-contact", self.html)
 
 
+    def test_planner_can_download_a_safe_csv_shopping_list(self):
+        self.assertIn("function downloadShoppingList()", self.html)
+        self.assertIn('onclick="downloadShoppingList()"', self.html)
+        self.assertIn('"Required (g)"', self.html)
+        self.assertIn('"Estimated pack cost (ZAR)"', self.html)
+        self.assertIn("text/csv;charset=utf-8", self.html)
+        self.assertIn("plannerShoppingExport=null;", self.html)
+        self.assertIn("items:Array.isArray(shop)", self.html)
+        self.assertIn(r"if(/^[\s]*[=+\-@]/.test(cell))", self.html)
+        self.assertIn('cell.replace(/"/g,\'""\')', self.html)
+        self.assertIn('if(value==null||value==="")return ""', self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
