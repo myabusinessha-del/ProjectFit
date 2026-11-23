@@ -232,6 +232,23 @@ class PlannerInputValidationTests(unittest.TestCase):
                 result = plan_for(2200, 100, 500, days=days)
                 self.assertEqual(result["days"], int(days))
 
+    def test_rejects_invalid_meal_counts_in_core_planner(self):
+        invalid_counts = (
+            0, 1, 2, 6, "four", 3.5, 4.5, True, False,
+            None, float("inf"), float("nan"),
+        )
+        for count in invalid_counts:
+            with self.subTest(count=count):
+                with self.assertRaisesRegex(ValueError, "Meals per day must be 3, 4 or 5"):
+                    plan_for(2200, 100, 500, meals_per_day=count)
+
+    def test_accepts_only_supported_meal_counts_in_core_planner(self):
+        for count in (3, 4, 5, 3.0, "4", "5"):
+            with self.subTest(count=count):
+                result = plan_for(2200, 100, 500, meals_per_day=count)
+                self.assertEqual(len(result["daily"]), int(count))
+                self.assertEqual(result["meals_per_day"], int(count))
+
     def test_rejects_negative_or_non_finite_budget(self):
         for budget in (-1, float("inf"), float("nan")):
             with self.subTest(budget=budget):
