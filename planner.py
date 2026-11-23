@@ -214,10 +214,17 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     if vegan: choices.update(VEGAN_MEALS)
     elif vegetarian: choices.update(VEGETARIAN_MEALS)
     try:
-        meals_per_day = int(meals_per_day)
+        meal_count_number = float(meals_per_day)
+        if (
+            isinstance(meals_per_day, bool)
+            or not isfinite(meal_count_number)
+            or not meal_count_number.is_integer()
+            or int(meal_count_number) not in (3, 4, 5)
+        ):
+            meals_per_day = 4
+        else:
+            meals_per_day = int(meal_count_number)
     except (TypeError, ValueError):
-        meals_per_day = 4
-    if meals_per_day not in (3, 4, 5):
         meals_per_day = 4
 
     def meal_entry(key):

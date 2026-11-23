@@ -134,8 +134,11 @@ class MealCountTests(unittest.TestCase):
         self.assertEqual(result["daily"][2]["name"], "Egg and peanut snack")
         self.assertEqual(result["daily"][3]["name"], "Banana snack")
 
-    def test_invalid_meal_count_falls_back_to_four(self):
-        for value in (None, 2, 6, "not-a-number"):
+    def test_invalid_or_fractional_meal_count_falls_back_to_four(self):
+        for value in (
+            None, 2, 6, "not-a-number", 3.5, 4.5,
+            True, False, float("inf"), float("nan"),
+        ):
             with self.subTest(value=value):
                 result = plan_for(2200, 100, 500, meals_per_day=value)
                 self.assertEqual(result["meals_per_day"], 4)
