@@ -213,12 +213,7 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
     choices={'breakfast':MEALS[0] if use_whey else MEALS[1],'lunch':MEALS[2],'dinner':MEALS[4],'snack':MEALS[6] if use_whey else MEALS[7]}
     if vegan: choices.update(VEGAN_MEALS)
     elif vegetarian: choices.update(VEGETARIAN_MEALS)
-    try:
-        meals_per_day = int(meals_per_day)
-    except (TypeError, ValueError):
-        meals_per_day = 4
-    if meals_per_day not in (3, 4, 5):
-        meals_per_day = 4
+    meals_per_day = _validated_meals_per_day(meals_per_day)
 
     def meal_entry(key):
         meal, name, items = choices[key]
