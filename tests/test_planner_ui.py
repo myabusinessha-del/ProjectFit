@@ -149,5 +149,14 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn('if(value==null||value==="")return ""', self.html)
 
 
+    def test_planner_highlights_material_daily_calorie_and_protein_target_deviations(self):
+        self.assertIn("var nutritionWarnings=[];", self.html)
+        self.assertIn("Math.max(1,target*0.02)", self.html)
+        self.assertIn('key==="calories"?"Daily calories":"Daily protein"', self.html)
+        self.assertIn('direction=difference<0?"below":"above"', self.html)
+        self.assertIn("Nutrition target check:", self.html)
+        self.assertIn('nutritionWarnings.join("; ")', self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
