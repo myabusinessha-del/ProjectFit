@@ -154,7 +154,7 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("apply_additional_macro_targets", self.server)
         self.assertLess(
             self.server.index("optimize_budget_plan(result)"),
-            self.server.index("apply_additional_macro_targets(result,p['macro_targets'])"),
+            self.server.index("apply_additional_macro_targets(result, p['macro_targets'])"),
         )
         self.assertIn("var nutritionWarnings=[];", self.html)
         self.assertIn("var nutritionWarningMetrics=[", self.html)
