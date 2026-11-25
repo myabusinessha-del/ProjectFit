@@ -149,11 +149,20 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn('if(value==null||value==="")return ""', self.html)
 
 
-    def test_planner_highlights_material_daily_calorie_and_protein_target_deviations(self):
+    def test_planner_compares_and_warns_on_all_available_daily_nutrition_targets(self):
+        self.assertIn('macro_targets:useCalculated?{carbs:targets.carbs,fat:targets.fat,fibre:targets.fibre}:undefined', self.html)
+        self.assertIn("apply_additional_macro_targets", self.server)
+        self.assertLess(
+            self.server.index("optimize_budget_plan(result)"),
+            self.server.index("apply_additional_macro_targets(result,p['macro_targets'])"),
+        )
         self.assertIn("var nutritionWarnings=[];", self.html)
+        self.assertIn("var nutritionWarningMetrics=[", self.html)
         self.assertIn("Math.max(1,target*0.02)", self.html)
-        self.assertIn('key==="calories"?"Daily calories":"Daily protein"', self.html)
-        self.assertIn('direction=difference<0?"below":"above"', self.html)
+        for key in ("carbs", "fat", "fibre"):
+            with self.subTest(key=key):
+                self.assertIn('key:"' + key + '"', self.html)
+                self.assertIn('macroTargetLabel("' + key + '")', self.html)
         self.assertIn("Nutrition target check:", self.html)
         self.assertIn('nutritionWarnings.join("; ")', self.html)
 
