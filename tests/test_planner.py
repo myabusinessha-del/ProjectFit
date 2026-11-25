@@ -1,6 +1,7 @@
 import unittest
 
 from planner import (
+    apply_additional_macro_targets,
     apply_ingredient_exclusions,
     calculate_targets,
     plan_for,
@@ -95,6 +96,23 @@ class PlannerApiPayloadValidationTests(unittest.TestCase):
             with self.subTest(value=value):
                 with self.assertRaisesRegex(ValueError, "Ingredient exclusions"):
                     validate_plan_request_payload({"excluded_allergens": value})
+
+
+    def test_planner_api_accepts_optional_calculated_macro_targets(self):
+        validate_plan_request_payload({
+            "macro_targets": {"carbs": 260, "fat": 70, "fibre": 30}
+        })
+        validate_plan_request_payload({"macro_targets": {}})
+
+    def test_planner_api_rejects_malformed_or_unsupported_macro_targets(self):
+        invalid_values = (
+            None, [], "invalid", {"sodium": 10}, {"carbs": True},
+            {"fat": -1}, {"fibre": float("nan")},
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    validate_plan_request_payload({"macro_targets": value})
 
 
 class MealCountTests(unittest.TestCase):
@@ -365,6 +383,43 @@ class PlannerTargetComparisonTests(unittest.TestCase):
         self.assertGreater(above["target_comparison"]["protein"]["difference"], 0)
         self.assertLess(below["target_comparison"]["calories"]["difference"], 0)
         self.assertLess(below["target_comparison"]["protein"]["difference"], 0)
+
+
+class AdditionalNutritionTargetComparisonTests(unittest.TestCase):
+    def test_calculated_macro_targets_are_compared_without_mutating_the_plan(self):
+        original = plan_for(2400, 180, 400)
+        macro_targets = {"carbs": 260, "fat": 70, "fibre": 30}
+
+        result = apply_additional_macro_targets(original, macro_targets)
+
+        for key, target in macro_targets.items():
+            with self.subTest(key=key):
+                comparison = result["target_comparison"][key]
+                actual = round(original["daily_totals"][key], 1)
+                self.assertEqual(comparison["target"], target)
+                self.assertEqual(comparison["actual"], actual)
+                self.assertEqual(comparison["difference"], round(actual - target, 1))
+                self.assertEqual(result["targets"][key], target)
+
+        self.assertEqual(
+            result["target_comparison"]["calories"],
+            original["target_comparison"]["calories"],
+        )
+        self.assertEqual(
+            result["target_comparison"]["protein"],
+            original["target_comparison"]["protein"],
+        )
+        self.assertNotIn("carbs", original["targets"])
+        self.assertNotIn("carbs", original["target_comparison"])
+
+    def test_additional_target_comparison_rejects_invalid_plan_or_values(self):
+        with self.assertRaisesRegex(ValueError, "generated meal plan"):
+            apply_additional_macro_targets({}, {"carbs": 250})
+        plan = plan_for(2400, 180, 400)
+        for targets in (None, {"sodium": 10}, {"fat": True}, {"fibre": -1}):
+            with self.subTest(targets=targets):
+                with self.assertRaises(ValueError):
+                    apply_additional_macro_targets(plan, targets)
 
 
 class BudgetOptimizationPayloadValidationTests(unittest.TestCase):
