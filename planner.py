@@ -133,6 +133,54 @@ def validate_plan_request_payload(payload):
                 'Ingredient exclusions must be a list containing only: peanut, milk, egg, soy or fish.'
             )
 
+    if 'macro_targets' in payload:
+        macro_targets = payload['macro_targets']
+        allowed_macro_targets = {'carbs', 'fat', 'fibre'}
+        if not isinstance(macro_targets, dict) or any(
+            key not in allowed_macro_targets for key in macro_targets
+        ):
+            raise ValueError(
+                'Additional nutrition targets must contain only carbs, fat or fibre.'
+            )
+        for key, value in macro_targets.items():
+            _validated_number(value, f'{key.title()} target', 0)
+
+
+def apply_additional_macro_targets(plan, macro_targets):
+    """Attach optional calculated carbohydrate, fat and fibre targets to a plan."""
+    if not isinstance(plan, dict) or not isinstance(plan.get('daily_totals'), dict):
+        raise ValueError('A generated meal plan with daily totals is required.')
+    if not isinstance(macro_targets, dict) or any(
+        key not in ('carbs', 'fat', 'fibre') for key in macro_targets
+    ):
+        raise ValueError('Additional nutrition targets must contain only carbs, fat or fibre.')
+    if not macro_targets:
+        return deepcopy(plan)
+
+    result = deepcopy(plan)
+    targets = result.get('targets')
+    if not isinstance(targets, dict):
+        targets = {}
+    comparison = result.get('target_comparison')
+    if not isinstance(comparison, dict):
+        comparison = {}
+
+    for key, value in macro_targets.items():
+        target = _validated_number(value, f'{key.title()} target', 0)
+        actual = _validated_number(
+            result['daily_totals'].get(key), f'Daily {key}', 0
+        )
+        targets[key] = target
+        comparison[key] = {
+            'target': round(target, 1),
+            'actual': round(actual, 1),
+            'difference': round(actual - target, 1),
+        }
+
+    result['targets'] = targets
+    result['target_comparison'] = comparison
+    return result
+
 
 def validate_macro_target_payload(payload):
     """Validate optional demographic numbers before service-layer conversion."""
