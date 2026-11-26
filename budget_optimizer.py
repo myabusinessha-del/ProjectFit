@@ -15,10 +15,11 @@ def _unchanged(plan, reason):
 
 
 def optimize_budget_plan(plan):
-    """Apply a conservative, opt-in whey-to-pea-protein pack-cost substitution.
+    """Apply the opt-in protein substitution without materially worsening targets.
 
-    The swap preserves daily protein to within 0.5 g and limits the calorie
-    change to 2%. Shopping costs are recalculated using full catalogue packs.
+    The swap preserves daily protein to within 0.5 g, limits calorie change to
+    2%, and checks any additional macro targets supplied by the profile.
+    Shopping costs are recalculated using full catalogue packs.
     """
     if not isinstance(plan, dict):
         raise ValueError('A generated meal plan is required.')
@@ -123,6 +124,36 @@ def optimize_budget_plan(plan):
             'The substitution would change daily calories or protein beyond the safe tolerance.',
         )
 
+    targets = plan.get('targets')
+    if isinstance(targets, dict):
+        for key in ('carbs', 'fat', 'fibre'):
+            if key not in targets:
+                continue
+            try:
+                target = float(targets[key])
+                original_actual = float(original_totals[key])
+            except (KeyError, TypeError, ValueError):
+                return _unchanged(
+                    plan,
+                    f'The original {key} target or nutrition total is unavailable.',
+                )
+            if (
+                not isfinite(target) or target < 0
+                or not isfinite(original_actual)
+            ):
+                return _unchanged(
+                    plan,
+                    f'The original {key} target or nutrition total is invalid.',
+                )
+            tolerance = max(1.0, abs(target) * 0.02)
+            original_gap = abs(original_actual - target)
+            optimized_gap = abs(new_totals[key] - target)
+            if optimized_gap > original_gap + tolerance:
+                return _unchanged(
+                    plan,
+                    f'The substitution would materially worsen the {key} target.',
+                )
+
     required_by_id = {}
     for meal in rebuilt:
         for item in meal['items']:
@@ -168,17 +199,23 @@ def optimize_budget_plan(plan):
 
     targets = plan.get('targets')
     if isinstance(targets, dict):
-        comparison = {}
-        for key in ('calories', 'protein'):
+        comparison = plan.get('target_comparison')
+        comparison = deepcopy(comparison) if isinstance(comparison, dict) else {}
+        for key in MACRO_KEYS:
+            if key not in targets:
+                continue
             try:
                 target = float(targets[key])
-            except (KeyError, TypeError, ValueError):
+            except (TypeError, ValueError):
+                continue
+            if not isfinite(target) or target < 0:
                 continue
             actual = round(new_totals[key], 1)
+            target_value = round(target, 1)
             comparison[key] = {
-                'target': round(target, 1),
+                'target': target_value,
                 'actual': actual,
-                'difference': round(actual - target, 1),
+                'difference': round(actual - target_value, 1),
             }
         if comparison:
             result['target_comparison'] = comparison
