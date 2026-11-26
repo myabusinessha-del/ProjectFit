@@ -111,10 +111,10 @@ class Handler(BaseHTTPRequestHandler):
                 result = routes[path](uid, p)
                 if p.get('excluded_allergens'):
                     result = apply_ingredient_exclusions(result, p['excluded_allergens'])
-                if p.get('optimize_budget') is True:
-                    result = optimize_budget_plan(result)
                 if 'macro_targets' in p:
                     result = apply_additional_macro_targets(result, p['macro_targets'])
+                if p.get('optimize_budget') is True:
+                    result = optimize_budget_plan(result)
                 return self.json(result)
             if path == '/api/macro-targets': validate_macro_target_payload(p)
             if path in routes:return self.json(routes[path](uid,p))
