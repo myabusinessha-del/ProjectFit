@@ -107,6 +107,13 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn("optimize_budget') is True", self.server)
         self.assertIn("optimize_budget', 'Budget optimisation selection", (Path(__file__).resolve().parents[1] / "planner.py").read_text(encoding="utf-8"))
 
+    def test_additional_macro_targets_are_applied_before_budget_optimization(self):
+        exclusions_index = self.server.index("result = apply_ingredient_exclusions(result")
+        targets_index = self.server.index("result = apply_additional_macro_targets(result")
+        optimizer_index = self.server.index("result = optimize_budget_plan(result)")
+        self.assertLess(exclusions_index, targets_index)
+        self.assertLess(targets_index, optimizer_index)
+
     def test_budget_swap_result_explains_savings_and_allergen_check(self):
         self.assertIn("budgetOpt.estimated_savings", self.html)
         self.assertIn("allergen information before use", self.html)
