@@ -1,5 +1,7 @@
+import os
 import sqlite3
 import unittest
+from unittest.mock import patch
 
 from health import health_status
 
@@ -67,6 +69,40 @@ class HealthStatusTests(unittest.TestCase):
         self.assertEqual(status, 503)
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["database"], "unavailable")
+
+    def test_includes_render_revision_branch_and_service_name(self):
+        render_environment = {
+            "RENDER_GIT_COMMIT": "38bbacc290a24ee47df66a2cb24ae997f4b7e90f",
+            "RENDER_GIT_BRANCH": "main",
+            "RENDER_SERVICE_NAME": "projectfit-live",
+        }
+        with patch.dict(os.environ, render_environment, clear=True):
+            payload, status = health_status(HealthyDatabase())
+
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            payload["deployment"],
+            {
+                "revision": "38bbacc290a24ee47df66a2cb24ae997f4b7e90f",
+                "branch": "main",
+                "service_name": "projectfit-live",
+            },
+        )
+
+    def test_omits_invalid_revision_and_empty_deployment_metadata(self):
+        with patch.dict(
+            os.environ,
+            {
+                "RENDER_GIT_COMMIT": "not-a-commit",
+                "RENDER_GIT_BRANCH": "",
+                "RENDER_SERVICE_NAME": "",
+            },
+            clear=True,
+        ):
+            payload, status = health_status(HealthyDatabase())
+
+        self.assertEqual(status, 200)
+        self.assertNotIn("deployment", payload)
 
 
 if __name__ == "__main__":
