@@ -208,6 +208,25 @@ def cost_for(items):
     return total
 
 
+def build_shopping_item(catalogue_item, required_grams):
+    """Build a pack-cost line with explicit static-price provenance."""
+    packs = ceil(required_grams / catalogue_item['unit_g'])
+    return {
+        'food': catalogue_item['name'],
+        'required_g': round(required_grams),
+        'pack_g': catalogue_item['unit_g'],
+        'packs': packs,
+        'price_per_pack': catalogue_item['price'],
+        'estimated_cost': round(packs * catalogue_item['price'], 2),
+        'price_status': 'planning_estimate',
+        'price_source': 'static_catalogue',
+        'price_verified': False,
+        'retailer_prices_verified': False,
+        'price_checked_at': None,
+        'stores': list(catalogue_item.get('stores', [])),
+    }
+
+
 def add_scaled(target, meals):
     return [{'meal':meal_name,'name':meal_name,'items':list(meal_items)} for meal_name,meal_items in meals]
 
@@ -339,8 +358,8 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         for x in m['items']: weekly[x['food']]=weekly.get(x['food'],0)+x['grams']*days
     shopping=[]
     for name,grams in weekly.items():
-        c=next(c for c in CATALOG if c['name']==name); packs=ceil(grams/c['unit_g'])
-        shopping.append({'food':name,'required_g':round(grams),'pack_g':c['unit_g'],'packs':packs,'price_per_pack':c['price'],'estimated_cost':round(packs*c['price'],2),'stores':c['stores']})
+        c=next(c for c in CATALOG if c['name']==name)
+        shopping.append(build_shopping_item(c, grams))
     total_cost=sum(x['estimated_cost'] for x in shopping)
     budget_for_plan = budget * days / 7
     target_comparison = {}
@@ -365,7 +384,9 @@ def plan_for(calories, protein, budget, meals_per_day=4, days=7, vegetarian=Fals
         'budget': budget,
         'budget_for_plan': round(budget_for_plan, 2),
         'budget_status': 'WITHIN BUDGET' if total_cost <= budget_for_plan else 'OVER BUDGET',
-        'catalogue_note': 'Weekly budget is prorated to the selected plan duration. Prices are planning estimates; verify current pack prices and availability in-store/online.',
+        'catalogue_price_status': 'planning_estimate',
+        'retailer_prices_verified': False,
+        'catalogue_note': 'Weekly budget is prorated to the selected plan duration. Prices are static ProjectFit planning estimates, not retailer quotes. Retailer-specific prices, pack sizes and product availability have not been verified; listed stores are suggestions only. Check current prices and product labels before purchase.',
     }
 
 
@@ -464,16 +485,7 @@ def apply_ingredient_exclusions(plan, excluded_allergens):
         if required_grams <= 0:
             continue
         catalogue_item = CATALOG_BY_ID[item_id]
-        packs = ceil(required_grams / catalogue_item['unit_g'])
-        shopping.append({
-            'food': catalogue_item['name'],
-            'required_g': round(required_grams),
-            'pack_g': catalogue_item['unit_g'],
-            'packs': packs,
-            'price_per_pack': catalogue_item['price'],
-            'estimated_cost': round(packs * catalogue_item['price'], 2),
-            'stores': catalogue_item['stores'],
-        })
+        shopping.append(build_shopping_item(catalogue_item, required_grams))
 
     estimated_total = round(sum(item['estimated_cost'] for item in shopping), 2)
     budget_limit = plan.get('budget_for_plan')
