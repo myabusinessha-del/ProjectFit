@@ -85,10 +85,10 @@ var rows=[
 ["Budget status",data.budgetStatus],
 ["Excluded catalogue ingredients",(data.excludedAllergens||[]).join(", ")],
 [],
-["Food","Required (g)","Pack size (g)","Packs to buy","Estimated pack cost (ZAR)","Stores"]
+["Food","Required (g)","Pack size (g)","Packs to buy","Estimated pack cost (ZAR)","Price status","Price source","Retailer prices verified","Price checked at","Retailers to check (unverified)"]
 ];
 data.items.forEach(function(item){
-rows.push([item.food,item.required_g,item.pack_g,item.packs,moneyCell(item.estimated_cost),(item.stores||[]).join(", ")]);
+rows.push([item.food,item.required_g,item.pack_g,item.packs,moneyCell(item.estimated_cost),item.price_status||"planning_estimate",item.price_source||"static_catalogue",item.retailer_prices_verified===true?"Yes":"No",item.price_checked_at||"",(item.stores||[]).join(", ")]);
 });
 var csv=rows.map(function(row){return row.map(csvCell).join(",")}).join("\r\n");
 var blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
@@ -189,7 +189,7 @@ budgetStatus:d.budget_status||"",
 excludedAllergens:Array.isArray(d.excluded_allergens)?d.excluded_allergens.slice():[],
 items:Array.isArray(shop)?shop.map(function(item){return {
 food:item.food,required_g:item.required_g,pack_g:item.pack_g,packs:item.packs,
-estimated_cost:item.estimated_cost,stores:Array.isArray(item.stores)?item.stores.slice():[]
+estimated_cost:item.estimated_cost,price_status:item.price_status||"planning_estimate",price_source:item.price_source||"static_catalogue",retailer_prices_verified:item.retailer_prices_verified===true,price_checked_at:item.price_checked_at||null,stores:Array.isArray(item.stores)?item.stores.slice():[]
 }}):[]
 };
 function costLabel(value){return value==null?"Unavailable":"R"+value.toFixed(2)}
@@ -202,7 +202,7 @@ h+='<div class="notice">Cost per day and per meal spreads the estimated full-pac
 if(excludedText)h+='<div class="notice">Excluded catalogue ingredients: '+esc(excludedText)+'. Verify product labels and cross-contact information before use.</div>';
 if(useCalculated){h+='<div class="notice">Targets calculated using '+weight+' kg, your saved profile and the selected '+esc(goal)+' goal / '+esc(activity)+' activity level. Estimated BMR: '+Math.round(targets.bmr)+' kcal; estimated TDEE: '+Math.round(targets.tdee)+' kcal.</div>'}else{h+='<div class="notice">Using your saved calorie target of '+Math.round(targets.calories)+' kcal and protein target of '+Math.round(targets.protein)+' g from Profile. Goal and activity selections apply when calculated targets are enabled.</div>'}
 h+='<div class="notice">Diet: '+(vegan?'Vegan':$("plvegetarian").checked?'Vegetarian':'Standard')+'. '+(vegan?'Animal-derived ingredients are excluded; pea protein is used instead of whey when protein powder is enabled.':'')+'</div>';h+='<div class="card"><h2 class="section-title">Daily meals</h2>'+(d.daily||[]).map(function(m){return '<div class="exercise"><div class="between"><b>'+esc(m.name)+'</b><span>'+Math.round(m.calories)+' kcal · '+Math.round(m.protein)+' g protein</span></div><span class="muted small">'+m.items.map(function(x){return esc(x.food)+' '+x.grams+' g'}).join(' · ')+'</span></div>'}).join("")+'</div>';
-h+='<div class="card"><h2 class="section-title">Shopping list</h2>'+(shop.length?'<button class="primary" type="button" onclick="downloadShoppingList()">Download shopping list (CSV)</button>'+shop.map(function(x){return '<div class="exercise"><div class="between"><b>'+esc(x.food)+'</b><span>'+x.packs+' × '+x.pack_g+' g</span></div><span class="muted small">Required '+x.required_g+' g · estimated R'+Number(x.estimated_cost||0).toFixed(0)+' · '+esc((x.stores||[]).join(", "))+'</span></div>'}).join(""):'<div class="empty">No shopping items generated.</div>')+'</div>';
+h+='<div class="card"><h2 class="section-title">Shopping list</h2>'+(shop.length?'<button class="primary" type="button" onclick="downloadShoppingList()">Download shopping list (CSV)</button>'+shop.map(function(x){return '<div class="exercise"><div class="between"><b>'+esc(x.food)+'</b><span>'+x.packs+' × '+x.pack_g+' g</span></div><span class="muted small">Required '+x.required_g+' g · estimated R'+Number(x.estimated_cost||0).toFixed(0)+' · planning estimate only; retailer price and availability unverified · retailers to check: '+esc((x.stores||[]).join(", "))+'</span></div>'}).join(""):'<div class="empty">No shopping items generated.</div>')+'</div>';
 if(d.budget_optimization){var budgetOpt=d.budget_optimization;if(budgetOpt.applied){var beforeCost=Number(budgetOpt.original_estimated_total),afterCost=Number(budgetOpt.optimized_estimated_total);var costComparison=Number.isFinite(beforeCost)&&Number.isFinite(afterCost)?'Before R'+beforeCost.toFixed(2)+' · after R'+afterCost.toFixed(2)+'. ':'Full-pack cost comparison unavailable. ';h+='<div class="notice"><b>Budget option applied:</b> Replaced whey protein with pea protein. '+costComparison+'Estimated full-pack saving: R'+Number(budgetOpt.estimated_savings||0).toFixed(2)+'. Daily protein change: '+Number(budgetOpt.protein_change_grams||0).toFixed(2)+' g; calorie change: '+Number(budgetOpt.calorie_change_percent||0).toFixed(2)+'%. Check product ingredients and allergen information before use.</div>'}else{h+='<div class="notice"><b>Budget option not applied:</b> '+esc(budgetOpt.reason||'No supported lower-cost substitution was found.')+'</div>'}}else{h+='<div class="card"><h2 class="section-title">Budget options</h2><p class="muted">Try an optional lower-cost protein-powder substitution. ProjectFit applies it only when estimated full-pack cost falls and daily calories and protein remain within safe limits.</p><button class="primary" onclick="runPlanner(true)">Try lower-cost protein swap</button></div>'}
 h+='<div class="notice">'+esc(d.catalogue_note||"Planning estimates only.")+'</div>';
 $("plannerResult").innerHTML=h;
