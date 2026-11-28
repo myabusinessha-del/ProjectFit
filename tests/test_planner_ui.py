@@ -156,6 +156,20 @@ class PlannerUiTests(unittest.TestCase):
         self.assertIn('if(value==null||value==="")return ""', self.html)
 
 
+    def test_shopping_list_discloses_static_estimates_and_unverified_retailer_prices(self):
+        for label in (
+            '"Price status"',
+            '"Price source"',
+            '"Retailer prices verified"',
+            '"Price checked at"',
+            '"Retailers to check (unverified)"',
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, self.html)
+        self.assertIn('retailer_prices_verified:item.retailer_prices_verified===true', self.html)
+        self.assertIn('retailer price and availability unverified', self.html)
+        self.assertIn('item.retailer_prices_verified===true?"Yes":"No"', self.html)
+
     def test_planner_compares_and_warns_on_all_available_daily_nutrition_targets(self):
         self.assertIn('macro_targets:useCalculated?{carbs:targets.carbs,fat:targets.fat,fibre:targets.fibre}:undefined', self.html)
         self.assertIn("apply_additional_macro_targets", self.server)

@@ -5,6 +5,18 @@ from planner import apply_additional_macro_targets, calc_food, plan_for
 
 
 class BudgetOptimizerTests(unittest.TestCase):
+    def test_optimized_shopping_lines_keep_unverified_price_metadata(self):
+        original = plan_for(2400, 180, 400, days=7, use_whey=True)
+        optimized = optimize_budget_plan(original)
+
+        self.assertTrue(optimized["budget_optimization"]["applied"])
+        self.assertTrue(optimized["shopping"])
+        for item in optimized["shopping"]:
+            self.assertEqual(item["price_status"], "planning_estimate")
+            self.assertEqual(item["price_source"], "static_catalogue")
+            self.assertIs(item["retailer_prices_verified"], False)
+            self.assertIsNone(item["price_checked_at"])
+
     def test_whey_to_pea_swap_reduces_pack_cost_and_preserves_macros(self):
         for meals_per_day in (3, 4, 5):
             with self.subTest(meals_per_day=meals_per_day):

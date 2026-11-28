@@ -1,7 +1,7 @@
 from copy import deepcopy
 from math import ceil, isfinite
 
-from planner import CATALOG, calc_food
+from planner import CATALOG, calc_food, build_shopping_item
 
 CATALOG_BY_ID = {item['id']: item for item in CATALOG}
 CATALOG_BY_NAME = {item['name']: item for item in CATALOG}
@@ -166,16 +166,7 @@ def optimize_budget_plan(plan):
     shopping = []
     for item_id, required_grams in required_by_id.items():
         catalogue_item = CATALOG_BY_ID[item_id]
-        packs = ceil(required_grams / catalogue_item['unit_g'])
-        shopping.append({
-            'food': catalogue_item['name'],
-            'required_g': round(required_grams),
-            'pack_g': catalogue_item['unit_g'],
-            'packs': packs,
-            'price_per_pack': catalogue_item['price'],
-            'estimated_cost': round(packs * catalogue_item['price'], 2),
-            'stores': catalogue_item['stores'],
-        })
+        shopping.append(build_shopping_item(catalogue_item, required_grams))
 
     optimized_cost = round(sum(item['estimated_cost'] for item in shopping), 2)
     if optimized_cost >= original_cost:
