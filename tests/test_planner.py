@@ -11,6 +11,33 @@ from planner import (
 
 
 
+class ShoppingPriceProvenanceTests(unittest.TestCase):
+    def test_generated_shopping_lines_mark_catalogue_prices_as_unverified(self):
+        plan = plan_for(2400, 180, 400, days=7)
+
+        self.assertEqual(plan["catalogue_price_status"], "planning_estimate")
+        self.assertIs(plan["retailer_prices_verified"], False)
+        self.assertTrue(plan["shopping"])
+        for item in plan["shopping"]:
+            with self.subTest(food=item["food"]):
+                self.assertEqual(item["price_status"], "planning_estimate")
+                self.assertEqual(item["price_source"], "static_catalogue")
+                self.assertIs(item["price_verified"], False)
+                self.assertIs(item["retailer_prices_verified"], False)
+                self.assertIsNone(item["price_checked_at"])
+                self.assertEqual(item["stores"], ["Checkers", "Pick n Pay", "Woolworths"])
+
+    def test_ingredient_exclusion_rebuild_keeps_price_provenance(self):
+        plan = apply_ingredient_exclusions(
+            plan_for(2400, 180, 400, days=7), ["peanut"]
+        )
+
+        for item in plan["shopping"]:
+            self.assertEqual(item["price_status"], "planning_estimate")
+            self.assertIs(item["retailer_prices_verified"], False)
+            self.assertIsNone(item["price_checked_at"])
+
+
 class PlannerApiPayloadValidationTests(unittest.TestCase):
     def test_planner_api_rejects_boolean_numeric_values_before_coercion(self):
         for field in ("calories", "protein", "budget"):
